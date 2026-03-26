@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<style>
+  /*
+   * Área útil alinhada ao HtmlPdfRenderer: A4 com margens 15mm (H) e 20mm (V)
+   * → largura ~180mm, altura ~257mm por folha.
+   */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  :root {
+    /* Deve coincidir com o padding horizontal de .sheet-inner (full-bleed das linhas) */
+    --sheet-pad-x: 26px;
+    --sheet-pad-y: 22px;
+  }
+  * { box-sizing: border-box; }
+  html {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #eef2f5;
+    color: #1a1a1a;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 180mm;
+    min-height: 257mm;
+    margin: 0 auto;
+    padding: 3mm 0;
+    background: #eef2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .page:last-of-type {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .sheet {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 16px rgba(11, 92, 122, 0.08);
+    padding: 0;
+    overflow: hidden;
+  }
+  .sheet-accent {
+    height: 5px;
+    background: linear-gradient(90deg, #0b5c7a 0%, #0d7a9e 55%, #14a3c7 100%);
+  }
+  .sheet-inner {
+    padding: var(--sheet-pad-y) var(--sheet-pad-x) 16px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  /* Divisórias na largura útil da folha (bordas da área branca), alinhadas ao PDF/impressão */
+  .sheet-inner > header.doc-header {
+    margin-left: calc(-1 * var(--sheet-pad-x));
+    margin-right: calc(-1 * var(--sheet-pad-x));
+    padding-left: var(--sheet-pad-x);
+    padding-right: var(--sheet-pad-x);
+  }
+  .sheet-inner > .page-foot {
+    margin-left: calc(-1 * var(--sheet-pad-x));
+    margin-right: calc(-1 * var(--sheet-pad-x));
+    padding-left: var(--sheet-pad-x);
+    padding-right: var(--sheet-pad-x);
+  }
+
+  .doc-header { margin-bottom: 22px; }
+  .doc-header--compact {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #d8dee4;
+  }
+  .muted-mini {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #5a6570;
+    font-weight: 600;
+  }
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #e3f2f7 0%, #d6ebf2 100%);
+    color: #0b5c7a;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .address {
+    color: #5a6570;
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #d8dee4;
+  }
+  h1 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #0b5c7a;
+    margin: 0 0 12px;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+  h1.sheet-title-sm {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tag {
+    display: inline-block;
+    background: #f4f7f9;
+    color: #3d4f5c;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #e2e8ec;
+  }
+
+  h2, .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0b5c7a;
+    margin: 0 0 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before, .section-title::before {
+    content: "";
+    width: 4px;
+    height: 14px;
+    background: #0b5c7a;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .block { margin-bottom: 22px; }
+  .block:last-child { margin-bottom: 0; }
+
+  .data-split {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .data-split .data-wrap { flex: 1; min-width: 260px; }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    border: 1px solid #e8ecef;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.data td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eef1f4;
+    vertical-align: top;
+  }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:nth-child(even) td { background: #fbfcfd; }
+  table.data td.k {
+    width: 40%;
+    color: #5a6570;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  table.data td.v { color: #1a1a1a; font-weight: 500; }
+
+  .checklist-head {
+    font-size: 11px;
+    color: #5a6570;
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .checklist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 14px;
+    border: 1px solid #e8ecef;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, #fafcfd 0%, #f6f9fb 100%);
+  }
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    line-height: 1.32;
+  }
+  .check-row:nth-child(4n+1),
+  .check-row:nth-child(4n+2) { background: rgba(11, 92, 122, 0.04); }
+  .check {
+    flex-shrink: 0;
+    min-width: 20px;
+    height: 20px;
+    line-height: 18px;
+    text-align: center;
+    border: 1.5px solid #0b5c7a;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0b5c7a;
+    background: #fff;
+  }
+
+  .section-card {
+    border: 1px solid #e2e8ec;
+    border-left: 4px solid #0b5c7a;
+    border-radius: 0 10px 10px 0;
+    background: #fafcfd;
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+  }
+  .section-card:last-child { margin-bottom: 0; }
+  .section-card .section-title { margin-bottom: 12px; }
+  .section-card .section-title::before { display: none; }
+  .lead {
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #2c353d;
+  }
+  .lead-tight { margin-bottom: 10px; }
+  .data-spaced { margin-bottom: 14px; }
+  .opt-full { grid-column: 1 / -1; }
+  .foot-note {
+    font-size: 11px;
+    color: #7a8792;
+    margin: 20px 0 0;
+    line-height: 1.5;
+  }
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    margin-bottom: 12px;
+  }
+  .options-grid.single { grid-template-columns: 1fr; }
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .callout {
+    background: #f0f7fa;
+    border: 1px solid #c5dde6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #2c353d;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .meta-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0b5c7a;
+    font-weight: 700;
+  }
+  .meta-value { font-weight: 600; color: #1a1a1a; }
+
+  .sig {
+    margin-top: 18px;
+    padding-top: 8px;
+  }
+  .sig-line {
+    height: 1px;
+    border-bottom: 1px dashed #a8b8c4;
+    width: 100%;
+    max-width: 92mm;
+    margin-bottom: 6px;
+  }
+  .sig-space {
+    height: 28px;
+    border-bottom: 1px solid #2c353d;
+    width: 100%;
+    max-width: 92mm;
+    margin-bottom: 8px;
+  }
+  .sig-caption {
+    margin: 0;
+    font-size: 11px;
+    color: #5a6570;
+    line-height: 1.4;
+  }
+  .sig-caption strong { color: #1a1a1a; font-weight: 600; }
+
+  .page-foot {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding-top: 10px;
+    border-top: 1px solid #d0d8de;
+    font-size: 10px;
+    color: #9aa5ad;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  p { margin: 10px 0; }
+  @media print {
+    body,
+    .page {
+      background: #fff !important;
+    }
+    .page { padding: 0; }
+    .sheet {
+      box-shadow: none;
+    }
+    .checklist-grid { break-inside: avoid; }
+    .section-card { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== Folha A4 1/5 — Capa e dados ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Book admissional · Fidelizza+</span>
+        <p class="address">Avenida Tamboré, 267 — 27º Andar — Alphaville, Barueri/SP · CEP 06460-000</p>
+        <h1>Book admissional — {{nomeColaborador}}</h1>
+        <div class="hero-tags">
+          <span class="tag">{{empresa}}</span>
+          <span class="tag">Admissão {{dataAdmissao}}</span>
+        </div>
+      </header>
+
+      <section class="block">
+        <h2>Dados do colaborador</h2>
+        <div class="data-split">
+          <div class="data-wrap">
+            <table class="data">
+              <tr><td class="k">Empresa</td><td class="v">{{empresa}}</td></tr>
+              <tr><td class="k">Nome completo</td><td class="v">{{nomeColaborador}}</td></tr>
+              <tr><td class="k">Data de admissão</td><td class="v">{{dataAdmissao}}</td></tr>
+              <tr><td class="k">E-mail</td><td class="v">{{emailContato}}</td></tr>
+            </table>
+          </div>
+          <div class="data-wrap">
+            <table class="data">
+              <tr><td class="k">Celular</td><td class="v">{{telefoneCelular}}</td></tr>
+              <tr><td class="k">Telefone residencial</td><td class="v">{{telefoneResidencial}}</td></tr>
+              <tr><td class="k">Contato de emergência</td><td class="v">{{contatoEmergenciaNome}}</td></tr>
+              <tr><td class="k">Telefone (emergência)</td><td class="v">{{contatoEmergenciaTelefone}}</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="page-foot">Folha A4 · Página 1 de 5 · Capa e dados do colaborador</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 2/5 — Checklist ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header doc-header--compact">
+        <span class="badge">Book admissional · Documentos</span>
+        <p class="muted-mini">{{nomeColaborador}} · {{empresa}}</p>
+      </header>
+
+      <section class="block">
+        <h2>Checklist de documentos</h2>
+        <p class="checklist-head">Marque o que foi entregue. Campos vazios indicam item não marcado.</p>
+        <div class="checklist-grid">
+          <div class="check-row"><span class="check">{{docFoto34}}</span> 01 foto 3×4</div>
+          <div class="check-row"><span class="check">{{docRg}}</span> Cópia do RG (não CNH)</div>
+          <div class="check-row"><span class="check">{{docCpf}}</span> Cópia do CPF/CIC</div>
+          <div class="check-row"><span class="check">{{docHistoricoEscolar}}</span> Cópia do histórico escolar</div>
+          <div class="check-row"><span class="check">{{docTituloEleitor}}</span> Cópia do título de eleitor</div>
+          <div class="check-row"><span class="check">{{docPis}}</span> Cópia do cartão PIS</div>
+          <div class="check-row"><span class="check">{{docReservista}}</span> Cópia da reservista</div>
+          <div class="check-row"><span class="check">{{docCtpsDigital}}</span> Carteira de trabalho digital</div>
+          <div class="check-row"><span class="check">{{docComprovanteEndereco}}</span> Comprovante de endereço</div>
+          <div class="check-row"><span class="check">{{docDadosBancarios}}</span> Dados bancários Itaú</div>
+          <div class="check-row"><span class="check">{{docCertidao}}</span> Certidão ({{tipoCertidao}})</div>
+          <div class="check-row"><span class="check">{{docCpfConjuge}}</span> CPF do cônjuge</div>
+          <div class="check-row"><span class="check">{{docCertidaoFilhos}}</span> Certidão — filhos até 10 anos</div>
+          <div class="check-row"><span class="check">{{docCarteiraVacinacao}}</span> Carteira de vacinação — menores de 7 anos</div>
+          <div class="check-row"><span class="check">{{docCpfFilhos}}</span> CPF dos filhos</div>
+          <div class="check-row"><span class="check">{{docAso}}</span> ASO — Atestado de Saúde Ocupacional</div>
+          <div class="check-row"><span class="check">{{docVacinacaoCovid}}</span> Comprovante vacinação COVID-19</div>
+          <div class="check-row"><span class="check">{{docConsultaCpf}}</span> Consulta de regularidade CPF</div>
+          <div class="check-row"><span class="check">{{docQualificacaoPis}}</span> Qualificação cadastral PIS</div>
+        </div>
+      </section>
+
+      <div class="page-foot">Folha A4 · Página 2 de 5 · Checklist de documentos</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 3/5 — Autodeclaração e adiantamento ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Declarações · Admissão</span>
+        <h1 class="sheet-title-sm">{{nomeColaborador}}</h1>
+        <div class="hero-tags">
+          <span class="tag">CPF {{cpf}}</span>
+          <span class="tag">Nasc. {{dataNascimento}}</span>
+        </div>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Autodeclaração étnico-racial</div>
+        <p class="lead">Eu, <strong>{{nomeColaborador}}</strong>, nascido(a) em <strong>{{dataNascimento}}</strong>, portador(a) do CPF <strong>{{cpf}}</strong>, declaro pertencer à seguinte categoria, para fins das ações de promoção da igualdade racial:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check">{{racaIndigena}}</span> Indígena</div>
+          <div class="opt"><span class="check">{{racaBranca}}</span> Branca</div>
+          <div class="opt"><span class="check">{{racaPreta}}</span> Preta</div>
+          <div class="opt"><span class="check">{{racaAmarela}}</span> Amarela</div>
+          <div class="opt"><span class="check">{{racaParda}}</span> Parda</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">{{dataAutodeclaracao}}</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>{{assinaturaNome}}</strong></p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Adiantamento salarial</div>
+        <table class="data data-spaced">
+          <tr><td class="k">Cargo</td><td class="v">{{cargo}}</td></tr>
+        </table>
+        <p class="lead lead-tight">Manifestação sobre adesão ao adiantamento salarial:</p>
+        <div class="options-grid single">
+          <div class="opt"><span class="check">{{adiantamentoNao}}</span> Não desejo aderir ao adiantamento salarial</div>
+          <div class="opt"><span class="check">{{adiantamentoSim}}</span> Desejo aderir ao adiantamento salarial</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">{{dataAdiantamento}}</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>{{assinaturaNome}}</strong></p>
+        </div>
+      </div>
+
+      <div class="page-foot">Folha A4 · Página 3 de 5 · Autodeclaração e adiantamento</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 4/5 — Vale transporte e identidade de gênero ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Transporte · Identidade</span>
+        <h1 class="sheet-title-sm">{{nomeColaborador}}</h1>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Regras para o vale transporte</div>
+        <div class="callout">{{textoValeTransporte}}</div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">{{dataValeTransporte}}</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Ciência e assinatura do(a) colaborador(a)<br><strong>{{assinaturaNome}}</strong></p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Termo de declaração de identidade de gênero</div>
+        <p class="lead">Eu, <strong>{{nomeColaborador}}</strong>, nascido(a) em <strong>{{dataNascimento}}</strong>, CPF <strong>{{cpf}}</strong>, declaro que minha identidade de gênero é:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check">{{generoCis}}</span> Cisgênero</div>
+          <div class="opt"><span class="check">{{generoTrans}}</span> Transgênero</div>
+          <div class="opt"><span class="check">{{generoNaoBinario}}</span> Não-binário</div>
+          <div class="opt"><span class="check">{{generoFluido}}</span> Gênero-fluido</div>
+          <div class="opt"><span class="check">{{generoAgenero}}</span> Agênero</div>
+          <div class="opt"><span class="check">{{generoBigenero}}</span> Bigênero</div>
+          <div class="opt"><span class="check">{{generoDemigenero}}</span> Demigênero</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">{{dataIdentidadeGenero}}</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>{{assinaturaNome}}</strong></p>
+        </div>
+      </div>
+
+      <div class="page-foot">Folha A4 · Página 4 de 5 · Vale transporte e identidade de gênero</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 5/5 — Orientação sexual ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Diversidade · Privacidade</span>
+        <h1 class="sheet-title-sm">{{nomeColaborador}}</h1>
+        <div class="hero-tags">
+          <span class="tag">CPF {{cpf}}</span>
+        </div>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Termo de declaração de orientação sexual</div>
+        <p class="lead">Eu, <strong>{{nomeColaborador}}</strong>, nascido(a) em <strong>{{dataNascimento}}</strong>, CPF <strong>{{cpf}}</strong>, declaro, de forma livre e voluntária, minha orientação sexual como:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check">{{orientHetero}}</span> Heterossexual</div>
+          <div class="opt"><span class="check">{{orientHomo}}</span> Homossexual</div>
+          <div class="opt"><span class="check">{{orientBi}}</span> Bissexual</div>
+          <div class="opt"><span class="check">{{orientPrefiroNao}}</span> Prefiro não declarar</div>
+          <div class="opt opt-full"><span class="check">{{orientOutrosMarcado}}</span> Outros — especificar: <strong>{{orientOutrosTexto}}</strong></div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">{{dataOrientacaoSexual}}</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>{{assinaturaNome}}</strong></p>
+        </div>
+      </div>
+
+      <p class="foot-note">
+        As informações de identidade de gênero e orientação sexual são tratadas com confidencialidade, nos termos da legislação aplicável e das políticas internas da empresa.
+      </p>
+
+      <div class="page-foot">Folha A4 · Página 5 de 5 · Orientação sexual — fim do book admissional</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

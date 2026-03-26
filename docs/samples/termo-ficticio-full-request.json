@@ -1,0 +1,20 @@
+{
+  "requisicaoId": "termo-ficticio-001",
+  "nomeArquivo": "termo-ficticio.pdf",
+  "inlineTemplate": {
+    "type": "html",
+    "content": "<!DOCTYPE html>\n<html lang=\"pt-BR\">\n<head>\n<meta charset=\"utf-8\"/>\n<style>\n  body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 48px; background: #f4f6f8; color: #222; }\n  .box { background: #fff; max-width: 640px; margin: 0 auto; padding: 40px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }\n  h1 { font-size: 20px; color: #0b5c7a; border-bottom: 2px solid #0b5c7a; padding-bottom: 12px; }\n  p { line-height: 1.55; font-size: 14px; margin: 14px 0; }\n  .k { color: #555; font-weight: 600; }\n  .foot { margin-top: 32px; font-size: 11px; color: #888; text-align: center; }\n</style>\n</head>\n<body>\n<div class=\"box\">\n  <h1>Termo — demonstração (dados fictícios)</h1>\n  <p><span class=\"k\">Nome completo:</span> {{nome}}</p>\n  <p><span class=\"k\">CPF:</span> {{cpf}}</p>\n  <p><span class=\"k\">Nome da mãe:</span> {{nameMae}}</p>\n  <p><span class=\"k\">Data de nascimento:</span> {{dataNascimento}}</p>\n  <p>Declaro para os devidos fins que as informações acima correspondem a dados de teste, sem valor legal.</p>\n  <p class=\"foot\">Documento gerado pelo DocEngine — conteúdo inteiramente fictício.</p>\n</div>\n</body>\n</html>",
+    "requiredFields": [
+      "nome",
+      "cpf",
+      "nameMae",
+      "dataNascimento"
+    ]
+  },
+  "dados": {
+    "nome": "ANA CAROLINA MENDES",
+    "cpf": "387.654.321-00",
+    "nameMae": "JULIANA MENDES SOUZA",
+    "dataNascimento": "05/03/1995"
+  }
+}

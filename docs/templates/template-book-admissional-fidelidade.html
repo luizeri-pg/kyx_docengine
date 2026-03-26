@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<style>
+  @page { size: A4; margin: 16mm 12mm 14mm 12mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111; font-size: 12px; line-height: 1.3; }
+  .page { min-height: 267mm; position: relative; }
+  .page + .page { page-break-before: always; }
+  .addr { text-align: center; font-size: 12px; margin-bottom: 8px; }
+  h1 { text-align: center; margin: 4px 0 10px; font-size: 20px; letter-spacing: .2px; }
+  h2 { text-align: center; margin: 6px 0 8px; font-size: 19px; }
+  p { margin: 6px 0; }
+  .line { margin: 5px 0; }
+  .blank { display: inline-block; border-bottom: 1px solid #222; min-width: 180px; padding: 0 4px 2px; }
+  .blank.sm { min-width: 70px; }
+  .blank.md { min-width: 120px; }
+  .blank.lg { min-width: 260px; }
+  .blank.xl { min-width: 360px; }
+  .checks { margin-top: 8px; }
+  .checks p { margin: 4px 0; }
+  .small { font-size: 11px; }
+  .center { text-align: center; }
+  .sig { margin-top: 26px; }
+  .sigline { display:inline-block; border-top:1px solid #111; min-width:260px; padding-top:4px; text-align:center; }
+  .space-top { margin-top: 14px; }
+</style>
+</head>
+<body>
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville, Barueri/SP<br/>CEP: 06460-000</div>
+    <p class="line"><b>Empresa:</b> <span class="blank lg">{{empresa}}</span></p>
+    <p class="line"><b>Nome:</b> <span class="blank xl">{{nomeColaborador}}</span></p>
+    <p class="line"><b>Admissão:</b> <span class="blank md">{{dataAdmissao}}</span></p>
+    <p class="line"><b>E-mail para contato (favor preencher de forma legível):</b><br/><span class="blank xl">{{emailContato}}</span></p>
+    <p class="line"><b>Telefones:</b> Celular: <span class="blank md">{{telefoneCelular}}</span> Residencial: <span class="blank md">{{telefoneResidencial}}</span></p>
+    <p class="line"><b>Em caso de emergência ligar para:</b> <span class="blank md">{{contatoEmergenciaNome}}</span> <b>Telefone:</b> <span class="blank md">{{contatoEmergenciaTelefone}}</span></p>
+
+    <div class="space-top"></div>
+    <p><b>Documentos:</b></p>
+    <div class="checks">
+      <p>({{docFoto34}}) 01 fotos 3x4</p>
+      <p>({{docRg}}) Cópia do RG - <b>NÃO É PERMITIDO CNH</b></p>
+      <p>({{docCpf}}) Cópia do CPF/CIC</p>
+      <p>({{docHistoricoEscolar}}) Cópia Histórico Escolar</p>
+      <p>({{docTituloEleitor}}) Cópia do Título de Eleitor</p>
+      <p>({{docPis}}) Cópia do cartão do PIS</p>
+      <p>({{docReservista}}) Cópia da Reservista</p>
+      <p>({{docCtpsDigital}}) Carteira de trabalho Digital</p>
+      <p>({{docComprovanteEndereco}}) Cópia do comprovante de endereço</p>
+      <p>({{docDadosBancarios}}) Cópia dos Dados Bancários ITAU (Agência e Conta)</p>
+      <p>({{docCertidao}}) Cópia da Certidão ({{tipoCertidao}})</p>
+      <p>({{docCpfConjuge}}) CPF do Cônjuge</p>
+      <p>({{docCertidaoFilhos}}) Cópia da Certidão de Nascimento dos filhos até 10 anos</p>
+      <p>({{docCarteiraVacinacao}}) Cópia da Carteira de Vacinação dos menores 07 anos</p>
+      <p>({{docCpfFilhos}}) Cópia do CPF dos filhos</p>
+      <p>({{docAso}}) Atestado de Saúde Ocupacional (ASO)</p>
+      <p>({{docVacinacaoCovid}}) Carteirinha ou Certificado de vacinação contra Covid-19</p>
+      <p>({{docConsultaCpf}}) Consulta de Regularidade do CPF</p>
+      <p>({{docQualificacaoPis}}) Qualificação Cadastral - PIS</p>
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville, Barueri/SP<br/>CEP: 06460-000</div>
+    <h2>AUTODECLARAÇÃO</h2>
+    <p>Eu, <span class="blank lg">{{nomeColaborador}}</span>, abaixo assinado, nascido em <span class="blank sm">{{dataNascimento}}</span>, portador do CPF nº <span class="blank md">{{cpf}}</span>, me autodeclaro:</p>
+    <div class="checks">
+      <p>({{racaIndigena}}) Indígena</p>
+      <p>({{racaBranca}}) Branca</p>
+      <p>({{racaPreta}}) Preto</p>
+      <p>({{racaAmarela}}) Amarela</p>
+      <p>({{racaParda}}) Parda</p>
+    </div>
+    <p class="line">Data: <span class="blank md">{{dataAutodeclaracao}}</span></p>
+    <p class="sig center"><span class="sigline">Assinatura do Colaborador(a): {{assinaturaNome}}</span></p>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville, Barueri/SP<br/>CEP: 06460-000</div>
+    <h2>ADIANTAMENTO SALARIAL</h2>
+    <p class="line"><b>Nome:</b> <span class="blank lg">{{nomeColaborador}}</span></p>
+    <p class="line"><b>Cargo:</b> <span class="blank md">{{cargo}}</span> &nbsp; <b>Data Admissão:</b> <span class="blank md">{{dataAdmissao}}</span></p>
+    <p>Informamos que o Adiantamento Salarial previsto em convenção coletiva e pago todo dia 20 do mês, não é obrigatório.</p>
+    <p>Você pode escolher se deseja ou não, somente na admissão.</p>
+    <p>Por favor, assinalar abaixo a sua opção:</p>
+    <div class="checks">
+      <p>({{adiantamentoNao}}) Não quero aderir ao Adiantamento salarial.</p>
+      <p>({{adiantamentoSim}}) Quero aderir ao Adiantamento salarial.</p>
+    </div>
+    <p class="line">Data: <span class="blank sm">{{dataAdiantamento}}</span> &nbsp;&nbsp; Assinatura: <span class="blank lg">{{assinaturaNome}}</span></p>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville, Barueri/SP<br/>CEP: 06460-000</div>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville, Barueri/SP<br/>CEP: 06460-000</div>
+    <h2>REGRAS PARA O VALE TRANSPORTE</h2>
+    <p>{{textoValeTransporte}}</p>
+    <p class="line">Data: <span class="blank sm">{{dataValeTransporte}}</span></p>
+    <p class="sig center"><span class="sigline">Assinatura do Colaborador(a): {{assinaturaNome}}</span></p>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville - SP / CEP: 06460-000</div>
+    <h2>TERMO DE DECLARAÇÃO DE IDENTIDADE DE GÊNERO</h2>
+    <p class="small">Em conformidade com a Lei nº 9.029/1995, que proíbe a discriminação no ambiente de trabalho, e com o compromisso da FIDELIZZA+ SOLUÇÕES E SERVIÇOS de promover um ambiente de trabalho inclusivo e respeitoso, solicitamos que o(a) colaborador(a) declare, de forma voluntária, sua identidade de gênero.</p>
+    <p><b>DECLARAÇÃO:</b></p>
+    <p>Eu, <span class="blank lg">{{nomeColaborador}}</span>, nascido(a) em <span class="blank sm">{{dataNascimento}}</span>, portador(a) do documento do tipo CPF N° <span class="blank md">{{cpf}}</span>, declaro para fins de atualização cadastral no âmbito de Recursos Humanos, minha identidade de gênero como:</p>
+    <div class="checks small">
+      <p>({{generoCis}}) Cisgênero</p>
+      <p>({{generoTrans}}) Transgênero</p>
+      <p>({{generoNaoBinario}}) Não-binário</p>
+      <p>({{generoFluido}}) Gênero-fluido</p>
+      <p>({{generoAgenero}}) Agênero</p>
+      <p>({{generoBigenero}}) Bigênero</p>
+      <p>({{generoDemigenero}}) Demigênero</p>
+    </div>
+    <p class="line">Data: <span class="blank sm">{{dataIdentidadeGenero}}</span></p>
+    <p class="sig"><span class="sigline">Assinatura do(a) Colaborador(a): {{assinaturaNome}}</span></p>
+  </section>
+
+  <section class="page">
+    <div class="addr">Avenida Tamboré, 267 - 27º Andar - Alphaville - SP / CEP: 06460-000</div>
+    <h2>TERMO DE DECLARAÇÃO DE ORIENTAÇÃO SEXUAL</h2>
+    <p class="small">Em conformidade com a Lei nº 9.029/1995, que proíbe a discriminação no ambiente de trabalho, e com o compromisso da FIDELIZZA+ SOLUÇÕES E SERVIÇOS de promover um ambiente de trabalho inclusivo e respeitoso, solicitamos que o(a) colaborador(a) declare, de forma voluntária, sua orientação sexual.</p>
+    <p><b>DECLARAÇÃO:</b></p>
+    <p>Eu, <span class="blank lg">{{nomeColaborador}}</span>, nascido(a) em <span class="blank sm">{{dataNascimento}}</span>, portador(a) do documento do tipo CPF N° <span class="blank md">{{cpf}}</span>, declaro para fins de atualização cadastral no âmbito de Recursos Humanos, minha orientação sexual como:</p>
+    <div class="checks small">
+      <p>({{orientHetero}}) Heterossexual</p>
+      <p>({{orientHomo}}) Homossexual</p>
+      <p>({{orientBi}}) Bissexual</p>
+      <p>({{orientPrefiroNao}}) Prefiro não declarar</p>
+      <p>({{orientOutrosMarcado}}) Outros: <span class="blank md">{{orientOutrosTexto}}</span></p>
+    </div>
+    <p class="line">Data: <span class="blank sm">{{dataOrientacaoSexual}}</span></p>
+    <p class="sig"><span class="sigline">Assinatura do(a) Colaborador(a): {{assinaturaNome}}</span></p>
+  </section>
+</body>
+</html>

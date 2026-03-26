@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Guia de Encaminhamento de Exames – SAFE</title>
+<!--
+  ┌─────────────────────────────────────────────────────────────────┐
+  │  MOCKUP GERADO POR API                                          │
+  │  requisicaoId : bf5a60e4-9d41-4c6e-826d-4f7f8e3a1c22          │
+  │  template     : template_safe_exames                            │
+  │  centroCusto  : idemia                                          │
+  │  nomeArquivo  : guia-exame-alessandro-osvaldir.pdf              │
+  └─────────────────────────────────────────────────────────────────┘
+-->
+<style>
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: #eef2f5;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1.45;
+    color: #1a1a1a;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  .accent-top {
+    height: 6px;
+    background: linear-gradient(90deg, #0b5c7a 0%, #0d7a9e 55%, #14a3c7 100%);
+    flex-shrink: 0;
+  }
+  .accent-bottom {
+    height: 4px;
+    background: linear-gradient(90deg, #14a3c7 0%, #0d7a9e 45%, #0b5c7a 100%);
+    flex-shrink: 0;
+    margin-top: auto;
+  }
+  .inner {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 22px 28px 18px;
+    gap: 14px;
+  }
+
+  /* Cabeçalho */
+  .doc-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #0b5c7a;
+  }
+  .logo-block { display: flex; flex-direction: column; gap: 2px; }
+  .logo-safe {
+    font-size: 32px; font-weight: 900; color: #0b5c7a;
+    letter-spacing: -1px; line-height: 1;
+  }
+  .logo-safe span { color: #14a3c7; }
+  .logo-tagline {
+    font-size: 8px; text-transform: uppercase; letter-spacing: 0.14em;
+    color: #7a8792; font-weight: 600;
+  }
+  .doc-title-block {
+    text-align: right; display: flex; flex-direction: column;
+    gap: 4px; align-items: flex-end;
+  }
+  .doc-main-title {
+    font-size: 13px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.06em; color: #0b5c7a; background: #eaf3f7;
+    padding: 5px 12px; border-radius: 5px; border: 1px solid #cce0ea;
+  }
+  .guia-meta { display: flex; gap: 16px; font-size: 10.5px; color: #5a6570; }
+  .guia-meta strong { color: #0b5c7a; }
+
+  /* Seções */
+  .sec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .sec-grid.col3 { grid-template-columns: 1fr 1fr 1fr; }
+  .sec { border: 1px solid #d4dde3; border-radius: 7px; overflow: hidden; }
+  .sec.full { grid-column: 1 / -1; }
+  .sec-head {
+    background: #eaf3f7; border-bottom: 1px solid #d4dde3;
+    padding: 4px 10px; font-size: 9.5px; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    color: #0b5c7a; display: flex; align-items: center; gap: 6px;
+  }
+  .sec-body { padding: 12px 16px; }
+
+  table.kv { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+  table.kv td { padding: 5px 8px; vertical-align: top; border-bottom: 1px solid #edf1f4; }
+  table.kv tr:last-child td { border-bottom: none; }
+  table.kv td.k { color: #6a7880; font-weight: 600; white-space: nowrap; width: 42%; font-size: 9.5px; }
+  table.kv td.v { color: #1a1a1a; font-weight: 500; }
+
+  /* Tabela exames */
+  table.exames {
+    width: 100%; border-collapse: collapse; font-size: 10px;
+    border: 1px solid #c8d4db; border-radius: 6px; overflow: hidden;
+  }
+  table.exames th {
+    background: #eaf3f7; color: #0b5c7a; font-weight: 700; font-size: 9.5px;
+    text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 11px;
+    border-bottom: 1px solid #c8d4db; border-right: 1px solid #c8d4db; text-align: left;
+  }
+  table.exames th:last-child { border-right: none; }
+  table.exames td {
+    padding: 8px 10px; border-bottom: 1px solid #e8edf1;
+    border-right: 1px solid #e8edf1; vertical-align: top; color: #1a1a1a;
+  }
+  table.exames td:last-child { border-right: none; }
+  table.exames tr:last-child td { border-bottom: none; }
+  table.exames tr:nth-child(even) td { background: #fafcfd; }
+  .tuss-badge {
+    display: inline-block; background: #e3f2f7; color: #0b5c7a;
+    border-radius: 4px; padding: 1px 5px; font-size: 9px;
+    font-weight: 700; letter-spacing: 0.03em;
+  }
+  .recom-text { font-style: italic; color: #5a6570; font-size: 9.5px; }
+
+  .tipo-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #0b5c7a, #0d7a9e);
+    color: #fff; border-radius: 5px; padding: 3px 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+  }
+
+  /* Recomendações */
+  .recom-box { border: 1px solid #d4dde3; border-radius: 7px; overflow: hidden; min-height: 48px; }
+  .recom-body { padding: 12px 14px; font-size: 10.5px; color: #2c353d; min-height: 40px; line-height: 1.6; }
+
+  /* Emissão */
+  .emission-block { border: 1px solid #d4dde3; border-radius: 7px; overflow: hidden; }
+  .emission-inner {
+    padding: 12px 14px; display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px 12px; font-size: 10px;
+  }
+  .em-field { display: flex; flex-direction: column; gap: 2px; }
+  .em-label { font-size: 9px; color: #7a8792; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .em-value { font-weight: 600; color: #1a1a1a; border-bottom: 1px solid #d4dde3; padding-bottom: 3px; min-height: 16px; }
+
+  /* Rodapé */
+  .foot {
+    padding: 6px 22px; font-size: 9px; color: #9aa5ad;
+    text-align: right; letter-spacing: 0.04em;
+    border-top: 1px solid #d0d8de; background: #fafcfd;
+  }
+
+  @media print {
+    body { background: #fff !important; }
+    .page { margin: 0 !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <div class="accent-top"></div>
+  <div class="inner">
+
+    <!-- Cabeçalho -->
+    <div class="doc-header">
+      <div class="logo-block">
+        <div class="logo-safe">SAFE<span>·</span></div>
+        <div class="logo-tagline">Saúde Ocupacional &amp; Medicina do Trabalho</div>
+      </div>
+      <div class="doc-title-block">
+        <div class="doc-main-title">Guia de Encaminhamento de Exames</div>
+        <div class="guia-meta">
+          <span>Nº da Guia: <strong>19368736</strong></span>
+          <span>Data de Emissão: <strong>18/11/2025</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empresa -->
+    <div class="sec">
+      <div class="sec-head">🏢 Dados da Empresa</div>
+      <div class="sec-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
+          <table class="kv">
+            <tr><td class="k">Empresa</td><td class="v">IDEMIA IDENTITY &amp; SECURITY FRANCE PARA O BRASIL</td></tr>
+            <tr><td class="k">CNPJ</td><td class="v">44.699.235/0001-99</td></tr>
+          </table>
+          <table class="kv">
+            <tr><td class="k">Unidade</td><td class="v">IDEMIA IDENTITY &amp; SECURITY</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Funcionário -->
+    <div class="sec">
+      <div class="sec-head">👤 Dados do Funcionário</div>
+      <div class="sec-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
+          <table class="kv">
+            <tr><td class="k">Nome</td><td class="v">ALESSANDRO OSVALDIR CARVALHO</td></tr>
+            <tr><td class="k">RG</td><td class="v">226913247</td></tr>
+            <tr><td class="k">CPF</td><td class="v">131.304.658-20</td></tr>
+          </table>
+          <table class="kv">
+            <tr><td class="k">Função</td><td class="v">EXPERT TECH SUPPORT ENGINEER III</td></tr>
+            <tr><td class="k">Setor</td><td class="v">ENGINEERING</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prestador -->
+    <div class="sec">
+      <div class="sec-head">🏥 Dados do Prestador</div>
+      <div class="sec-body">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0 20px;">
+          <table class="kv">
+            <tr><td class="k">Prestador</td><td class="v">AUDIO LIFE – SANTO AMARO/SP</td></tr>
+            <tr><td class="k">Telefone</td><td class="v">(11) 3858-5103</td></tr>
+            <tr><td class="k">Fax</td><td class="v">—</td></tr>
+            <tr><td class="k">Atendente</td><td class="v">—</td></tr>
+          </table>
+          <table class="kv">
+            <tr><td class="k">Endereço</td><td class="v">Avenida Adolfo Pinheiro, 2058</td></tr>
+            <tr><td class="k">Complemento</td><td class="v">8º andar</td></tr>
+            <tr><td class="k">Bairro</td><td class="v">Santo Amaro</td></tr>
+            <tr><td class="k">Cidade / UF</td><td class="v">São Paulo / SP</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tipo exame + médico + agendamento -->
+    <div class="sec-grid col3">
+      <div class="sec">
+        <div class="sec-head">📋 Tipo de Exame</div>
+        <div class="sec-body" style="padding-top:8px; padding-bottom:8px;">
+          <span class="tipo-badge">Demissional</span>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head">👨‍⚕️ Médico Responsável</div>
+        <div class="sec-body">
+          <table class="kv">
+            <tr><td class="k">Nome</td><td class="v">Marcos da Silva Ferreira</td></tr>
+            <tr><td class="k">CRM</td><td class="v">156258/SP</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="sec">
+        <div class="sec-head">📅 Agendamento</div>
+        <div class="sec-body">
+          <table class="kv">
+            <tr><td class="k">Data</td><td class="v">19/11/2025</td></tr>
+            <tr><td class="k">Hora</td><td class="v">09:30</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de exames -->
+    <div class="sec">
+      <div class="sec-head">🔬 Exames Solicitados</div>
+      <div class="sec-body" style="padding:0;">
+        <table class="exames">
+          <thead>
+            <tr>
+              <th style="width:12%;">TUSS</th>
+              <th style="width:38%;">Nome do Exame</th>
+              <th style="width:11%;">Data</th>
+              <th style="width:9%;">Hora</th>
+              <th>Recomendação de Preparo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="tuss-badge">10101012</span></td>
+              <td>Avaliação Clínica Ocupacional (Anamnese e Exame físico)</td>
+              <td>19/11/2025</td>
+              <td>09:30</td>
+              <td class="recom-text">Não há necessidade de preparação especial.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Recomendações gerais -->
+    <div class="recom-box">
+      <div class="sec-head" style="background:#fffbe6; border-bottom:1px solid #f0c800; color:#7a5c00;">
+        ⚠️ Recomendações Gerais
+      </div>
+      <div class="recom-body" style="color:#9aa5ad; font-style:italic;">Nenhuma recomendação geral registrada.</div>
+    </div>
+
+    <!-- Emissão -->
+    <div class="emission-block">
+      <div class="sec-head">✍️ Responsável pela Emissão</div>
+      <div class="emission-inner">
+        <div class="em-field">
+          <span class="em-label">Data</span>
+          <span class="em-value">19/11/2025</span>
+        </div>
+        <div class="em-field">
+          <span class="em-label">Nome</span>
+          <span class="em-value">Valeria Rodrigues de Andrade</span>
+        </div>
+        <div class="em-field">
+          <span class="em-label">E-mail</span>
+          <span class="em-value">valeria.rodrigues@safebr.com.br</span>
+        </div>
+        <div class="em-field">
+          <span class="em-label">Telefone</span>
+          <span class="em-value">—</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /inner -->
+  <div class="accent-bottom"></div>
+  <div class="foot">
+    SAFE · Guia de Encaminhamento de Exames · Nº 19368736 · Emitido em 18/11/2025 · kyx_docengine
+  </div>
+</div>
+
+</body>
+</html>

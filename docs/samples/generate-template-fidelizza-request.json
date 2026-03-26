@@ -1,0 +1,32 @@
+{
+  "requisicaoId": "48897d30-1cf9-42a8-ba00-def416dd3950",
+  "config": {
+    "template": "template-fidelizza",
+    "centroCusto": "sfairalimentos",
+    "nomeArquivo": "fidelizza-beatriz-costa.pdf"
+  },
+  "dados": {
+    "nomeCompleto": "BEATRIZ COSTA LIMA",
+    "nomeMae": "PATRICIA LIMA FERREIRA",
+    "dataNascimento": "02/11/1990",
+    "naturalidade": "Curitiba — PR",
+    "estadoCivil": "Casada",
+    "nacionalidade": "Brasileira",
+    "cpf": "412.887.392-18",
+    "rg": "12.345.678-9 SSP/PR",
+    "tituloEleitor": "9876 5432 1098",
+    "pis": "198.76543.21-0",
+    "email": "beatriz.costa.exemplo@email.com.br",
+    "telefone": "(41) 99123-8844",
+    "telefoneFixo": "(41) 3322-1100",
+    "logradouro": "Av. das Palmeiras, 450",
+    "complemento": "Casa 2",
+    "bairroCidadeUf": "Batel — Curitiba / PR",
+    "cep": "80420-000",
+    "profissao": "Engenheira civil",
+    "empregador": "Construtora Horizonte S.A. (nome fictício)",
+    "renda": "R$ 12.300,00",
+    "dataEmissao": "23/03/2026",
+    "refInterna": "FIDELIZZA-BEATRIZ-2026-001"
+  }
+}

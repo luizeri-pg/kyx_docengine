@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; padding: 40px; background: #eef2f5; color: #1a1a1a; }
+  .sheet { background: #fff; max-width: 720px; margin: 0 auto; padding: 36px 40px; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  h1 { font-size: 22px; color: #0b5c7a; margin: 0 0 8px; border-bottom: 2px solid #0b5c7a; padding-bottom: 12px; }
+  .sub { color: #666; font-size: 13px; margin-bottom: 24px; }
+  h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: #0b5c7a; margin: 22px 0 10px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td { padding: 8px 10px; border-bottom: 1px solid #e8ecef; vertical-align: top; }
+  td.k { width: 38%; color: #555; font-weight: 600; }
+  td.v { color: #111; }
+  .badge { display: inline-block; background: #e3f2f7; color: #0b5c7a; padding: 4px 10px; border-radius: 4px; font-size: 12px; margin-bottom: 16px; }
+  .footer { margin-top: 28px; font-size: 11px; color: #888; text-align: center; }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <span class="badge">Fidelizza — demonstração (dados fictícios)</span>
+  <h1>Ficha cadastral — {{nomeCompleto}}</h1>
+  <p class="sub">Emitido em {{dataEmissao}} · Referência interna {{refInterna}}</p>
+
+  <h2>Dados pessoais</h2>
+  <table>
+    <tr><td class="k">Nome completo</td><td class="v">{{nomeCompleto}}</td></tr>
+    <tr><td class="k">Nome da mãe</td><td class="v">{{nomeMae}}</td></tr>
+    <tr><td class="k">Data de nascimento</td><td class="v">{{dataNascimento}}</td></tr>
+    <tr><td class="k">Naturalidade</td><td class="v">{{naturalidade}}</td></tr>
+    <tr><td class="k">Estado civil</td><td class="v">{{estadoCivil}}</td></tr>
+    <tr><td class="k">Nacionalidade</td><td class="v">{{nacionalidade}}</td></tr>
+  </table>
+
+  <h2>Documentos</h2>
+  <table>
+    <tr><td class="k">CPF</td><td class="v">{{cpf}}</td></tr>
+    <tr><td class="k">RG</td><td class="v">{{rg}}</td></tr>
+    <tr><td class="k">Título de eleitor</td><td class="v">{{tituloEleitor}}</td></tr>
+    <tr><td class="k">PIS/PASEP</td><td class="v">{{pis}}</td></tr>
+  </table>
+
+  <h2>Contato</h2>
+  <table>
+    <tr><td class="k">E-mail</td><td class="v">{{email}}</td></tr>
+    <tr><td class="k">Telefone celular</td><td class="v">{{telefone}}</td></tr>
+    <tr><td class="k">Telefone fixo</td><td class="v">{{telefoneFixo}}</td></tr>
+  </table>
+
+  <h2>Endereço</h2>
+  <table>
+    <tr><td class="k">Logradouro</td><td class="v">{{logradouro}}</td></tr>
+    <tr><td class="k">Complemento</td><td class="v">{{complemento}}</td></tr>
+    <tr><td class="k">Bairro / Cidade / UF</td><td class="v">{{bairroCidadeUf}}</td></tr>
+    <tr><td class="k">CEP</td><td class="v">{{cep}}</td></tr>
+  </table>
+
+  <h2>Profissional</h2>
+  <table>
+    <tr><td class="k">Profissão</td><td class="v">{{profissao}}</td></tr>
+    <tr><td class="k">Empregador (fictício)</td><td class="v">{{empregador}}</td></tr>
+    <tr><td class="k">Renda mensal declarada</td><td class="v">{{renda}}</td></tr>
+  </table>
+
+  <p class="footer">Todos os dados acima são <strong>fictícios</strong>, apenas para testes do motor de documentos.</p>
+</div>
+</body>
+</html>

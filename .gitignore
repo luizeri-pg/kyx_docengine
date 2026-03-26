@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+
+# .NET
+bin/
+obj/
+*.dll
+*.pdb
+*.user
+*.suo
+.vs/
+.idea/
+
+# Environment
+.env
+.env.local
+.env.*.local
+appsettings.Local.json
+appsettings.*.local.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+*~
+.vscode/settings.json
+
+# Test
+coverage/
+
+# Misc
+*.tmp
+*.temp
+
+
+# Python virtual environment
+.venv-pdf/

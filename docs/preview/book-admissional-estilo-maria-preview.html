@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<style>
+  /*
+   * Área útil alinhada ao HtmlPdfRenderer: A4 com margens 15mm (H) e 20mm (V)
+   * → largura ~180mm, altura ~257mm por folha.
+   */
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  :root {
+    --sheet-pad-x: 26px;
+    --sheet-pad-y: 22px;
+  }
+  * { box-sizing: border-box; }
+  html {
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #eef2f5;
+    color: #1a1a1a;
+    font-size: 13px;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .page {
+    width: 180mm;
+    min-height: 257mm;
+    margin: 0 auto;
+    padding: 3mm 0;
+    background: #eef2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .page:last-of-type {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .sheet {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 16px rgba(11, 92, 122, 0.08);
+    padding: 0;
+    overflow: hidden;
+  }
+  .sheet-accent {
+    height: 5px;
+    background: linear-gradient(90deg, #0b5c7a 0%, #0d7a9e 55%, #14a3c7 100%);
+  }
+  .sheet-inner {
+    padding: var(--sheet-pad-y) var(--sheet-pad-x) 16px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .sheet-inner > header.doc-header {
+    margin-left: calc(-1 * var(--sheet-pad-x));
+    margin-right: calc(-1 * var(--sheet-pad-x));
+    padding-left: var(--sheet-pad-x);
+    padding-right: var(--sheet-pad-x);
+  }
+  .sheet-inner > .page-foot {
+    margin-left: calc(-1 * var(--sheet-pad-x));
+    margin-right: calc(-1 * var(--sheet-pad-x));
+    padding-left: var(--sheet-pad-x);
+    padding-right: var(--sheet-pad-x);
+  }
+
+  .doc-header { margin-bottom: 22px; }
+  .doc-header--compact {
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #d8dee4;
+  }
+  .muted-mini {
+    margin: 6px 0 0;
+    font-size: 11px;
+    color: #5a6570;
+    font-weight: 600;
+  }
+  .badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #e3f2f7 0%, #d6ebf2 100%);
+    color: #0b5c7a;
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .address {
+    color: #5a6570;
+    font-size: 11px;
+    line-height: 1.4;
+    margin: 0 0 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #d8dee4;
+  }
+  h1 {
+    font-size: 21px;
+    font-weight: 700;
+    color: #0b5c7a;
+    margin: 0 0 12px;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+  h1.sheet-title-sm {
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+  }
+  .tag {
+    display: inline-block;
+    background: #f4f7f9;
+    color: #3d4f5c;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #e2e8ec;
+  }
+
+  h2, .section-title {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0b5c7a;
+    margin: 0 0 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before, .section-title::before {
+    content: "";
+    width: 4px;
+    height: 14px;
+    background: #0b5c7a;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .block { margin-bottom: 22px; }
+  .block:last-child { margin-bottom: 0; }
+
+  .data-split {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .data-split .data-wrap { flex: 1; min-width: 260px; }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    border: 1px solid #e8ecef;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  table.data td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eef1f4;
+    vertical-align: top;
+  }
+  table.data tr:last-child td { border-bottom: none; }
+  table.data tr:nth-child(even) td { background: #fbfcfd; }
+  table.data td.k {
+    width: 40%;
+    color: #5a6570;
+    font-weight: 600;
+    font-size: 11px;
+  }
+  table.data td.v { color: #1a1a1a; font-weight: 500; }
+
+  .checklist-head {
+    font-size: 11px;
+    color: #5a6570;
+    margin: 0 0 8px;
+    font-weight: 600;
+  }
+  .checklist-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px 14px;
+    border: 1px solid #e8ecef;
+    border-radius: 8px;
+    padding: 8px 10px;
+    background: linear-gradient(180deg, #fafcfd 0%, #f6f9fb 100%);
+  }
+  .check-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 5px 6px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    line-height: 1.32;
+  }
+  .check-row:nth-child(4n+1),
+  .check-row:nth-child(4n+2) { background: rgba(11, 92, 122, 0.04); }
+  .check {
+    flex-shrink: 0;
+    min-width: 20px;
+    height: 20px;
+    line-height: 18px;
+    text-align: center;
+    border: 1.5px solid #0b5c7a;
+    border-radius: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0b5c7a;
+    background: #fff;
+  }
+
+  .section-card {
+    border: 1px solid #e2e8ec;
+    border-left: 4px solid #0b5c7a;
+    border-radius: 0 10px 10px 0;
+    background: #fafcfd;
+    padding: 14px 16px 16px;
+    margin-bottom: 14px;
+  }
+  .section-card:last-child { margin-bottom: 0; }
+  .section-card .section-title { margin-bottom: 12px; }
+  .section-card .section-title::before { display: none; }
+  .lead {
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #2c353d;
+  }
+  .lead-tight { margin-bottom: 10px; }
+  .data-spaced { margin-bottom: 14px; }
+  .opt-full { grid-column: 1 / -1; }
+  .foot-note {
+    font-size: 11px;
+    color: #7a8792;
+    margin: 20px 0 0;
+    line-height: 1.5;
+  }
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 14px;
+    margin-bottom: 12px;
+  }
+  .options-grid.single { grid-template-columns: 1fr; }
+  .opt {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background: #fff;
+    border: 1px solid #e8ecef;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .callout {
+    background: #f0f7fa;
+    border: 1px solid #c5dde6;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 0 0 14px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: #2c353d;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+  }
+  .meta-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #0b5c7a;
+    font-weight: 700;
+  }
+  .meta-value { font-weight: 600; color: #1a1a1a; }
+
+  .sig {
+    margin-top: 18px;
+    padding-top: 8px;
+  }
+  .sig-line {
+    height: 1px;
+    border-bottom: 1px dashed #a8b8c4;
+    width: 100%;
+    max-width: 92mm;
+    margin-bottom: 6px;
+  }
+  .sig-space {
+    height: 28px;
+    border-bottom: 1px solid #2c353d;
+    width: 100%;
+    max-width: 92mm;
+    margin-bottom: 8px;
+  }
+  .sig-caption {
+    margin: 0;
+    font-size: 11px;
+    color: #5a6570;
+    line-height: 1.4;
+  }
+  .sig-caption strong { color: #1a1a1a; font-weight: 600; }
+
+  .page-foot {
+    margin-top: auto;
+    flex-shrink: 0;
+    padding-top: 10px;
+    border-top: 1px solid #d0d8de;
+    font-size: 10px;
+    color: #9aa5ad;
+    text-align: right;
+    letter-spacing: 0.04em;
+  }
+
+  p { margin: 10px 0; }
+  @media print {
+    body,
+    .page {
+      background: #fff !important;
+    }
+    .page { padding: 0; }
+    .sheet {
+      box-shadow: none;
+    }
+    .checklist-grid { break-inside: avoid; }
+    .section-card { break-inside: avoid; }
+  }
+
+  .page { margin-bottom: 24px !important; }
+
+  /* ---- Vale Transporte ---- */
+  .vt-section-title {
+    background: #f5e97a;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding: 5px 8px;
+    border: 1px solid #d8c800;
+    letter-spacing: 0.04em;
+  }
+  .vt-warn {
+    background: #fffbe6;
+    border: 1px solid #f0c800;
+    color: #7a5c00;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-align: center;
+    padding: 4px 8px;
+    margin-bottom: 0;
+  }
+  table.vt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+    border: 1px solid #c8d0d8;
+  }
+  table.vt th {
+    background: #eaf2f7;
+    color: #0b5c7a;
+    font-weight: 700;
+    padding: 5px 7px;
+    border: 1px solid #c8d0d8;
+    text-align: center;
+  }
+  table.vt td {
+    padding: 5px 7px;
+    border: 1px solid #c8d0d8;
+    vertical-align: middle;
+    color: #1a1a1a;
+  }
+  table.vt td.vt-has {
+    text-align: center;
+    white-space: nowrap;
+    color: #3a4a55;
+  }
+  .vt-field {
+    display: inline-block;
+    min-width: 52px;
+    border-bottom: 1px solid #9aacb8;
+    height: 14px;
+  }
+  .vt-check-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+  }
+  .vt-check-box {
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    border: 1.2px solid #0b5c7a;
+    border-radius: 3px;
+    text-align: center;
+    line-height: 11px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #0b5c7a;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  .vt-legal {
+    font-size: 10px;
+    line-height: 1.55;
+    color: #2c353d;
+    border: 1px solid #c8d0d8;
+    padding: 8px 10px;
+    margin-top: 8px;
+    background: #fafcfd;
+    border-radius: 4px;
+  }
+  .vt-sig-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    margin-top: 14px;
+  }
+  .vt-sig-date {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 90px;
+  }
+  .vt-sig-date-line {
+    font-size: 11.5px;
+    letter-spacing: 0.12em;
+    color: #3a4a55;
+    border-bottom: 1px solid #2c353d;
+    padding-bottom: 2px;
+  }
+  .vt-sig-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .vt-sig-line-full {
+    width: 100%;
+    border-bottom: 1px solid #2c353d;
+    height: 26px;
+  }
+  .vt-row-inline {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 11.5px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eef1f4;
+  }
+  .vt-row-inline:last-child { border-bottom: none; }
+  .vt-label { color: #5a6570; font-weight: 600; font-size: 10.5px; }
+  .vt-value-line {
+    flex: 1;
+    border-bottom: 1px solid #9aacb8;
+    min-width: 40px;
+    height: 14px;
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== Folha A4 1/5 — Capa e dados ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Book admissional · Fidelizza+</span>
+        <p class="address">Avenida Tamboré, 267 — 27º Andar — Alphaville, Barueri/SP · CEP 06460-000</p>
+        <h1>Book admissional — LUCAS HENRIQUE OLIVEIRA</h1>
+        <div class="hero-tags">
+          <span class="tag">Fidelizza+ Solucoes e Servicos</span>
+          <span class="tag">Admissão 24/03/2026</span>
+        </div>
+      </header>
+
+      <section class="block">
+        <h2>Dados do colaborador</h2>
+        <div class="data-split">
+          <div class="data-wrap">
+            <table class="data">
+              <tr><td class="k">Empresa</td><td class="v">Fidelizza+ Solucoes e Servicos</td></tr>
+              <tr><td class="k">Nome completo</td><td class="v">LUCAS HENRIQUE OLIVEIRA</td></tr>
+              <tr><td class="k">Data de admissão</td><td class="v">24/03/2026</td></tr>
+              <tr><td class="k">E-mail</td><td class="v">lucas.h.oliveira.ficticio@email.com</td></tr>
+            </table>
+          </div>
+          <div class="data-wrap">
+            <table class="data">
+              <tr><td class="k">Celular</td><td class="v">(11) 99888-7766</td></tr>
+              <tr><td class="k">Telefone residencial</td><td class="v">(11) 3567-2244</td></tr>
+              <tr><td class="k">Contato de emergência</td><td class="v">ROSA MARIA OLIVEIRA</td></tr>
+              <tr><td class="k">Telefone (emergência)</td><td class="v">(11) 97777-1234</td></tr>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <div class="page-foot">Folha A4 · Página 1 de 5 · Capa e dados do colaborador</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 2/5 — Checklist ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header doc-header--compact">
+        <span class="badge">Book admissional · Documentos</span>
+        <p class="muted-mini">LUCAS HENRIQUE OLIVEIRA · Fidelizza+ Solucoes e Servicos</p>
+      </header>
+
+      <section class="block">
+        <h2>Checklist de documentos</h2>
+        <p class="checklist-head">Marque o que foi entregue. Campos vazios indicam item não marcado.</p>
+        <div class="checklist-grid">
+          <div class="check-row"><span class="check">X</span> 01 foto 3×4</div>
+          <div class="check-row"><span class="check">X</span> Cópia do RG (não CNH)</div>
+          <div class="check-row"><span class="check">X</span> Cópia do CPF/CIC</div>
+          <div class="check-row"><span class="check">X</span> Cópia do histórico escolar</div>
+          <div class="check-row"><span class="check">X</span> Cópia do título de eleitor</div>
+          <div class="check-row"><span class="check">X</span> Cópia do cartão PIS</div>
+          <div class="check-row"><span class="check"></span> Cópia da reservista</div>
+          <div class="check-row"><span class="check">X</span> Carteira de trabalho digital</div>
+          <div class="check-row"><span class="check">X</span> Comprovante de endereço</div>
+          <div class="check-row"><span class="check">X</span> Dados bancários Itaú</div>
+          <div class="check-row"><span class="check">X</span> Certidão (Nascimento)</div>
+          <div class="check-row"><span class="check"></span> CPF do cônjuge</div>
+          <div class="check-row"><span class="check"></span> Certidão — filhos até 10 anos</div>
+          <div class="check-row"><span class="check"></span> Carteira de vacinação — menores de 7 anos</div>
+          <div class="check-row"><span class="check"></span> CPF dos filhos</div>
+          <div class="check-row"><span class="check">X</span> ASO — Atestado de Saúde Ocupacional</div>
+          <div class="check-row"><span class="check">X</span> Comprovante vacinação COVID-19</div>
+          <div class="check-row"><span class="check">X</span> Consulta de regularidade CPF</div>
+          <div class="check-row"><span class="check">X</span> Qualificação cadastral PIS</div>
+        </div>
+      </section>
+
+      <div class="page-foot">Folha A4 · Página 2 de 5 · Checklist de documentos</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 3/5 — Autodeclaração e adiantamento ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Declarações · Admissão</span>
+        <h1 class="sheet-title-sm">LUCAS HENRIQUE OLIVEIRA</h1>
+        <div class="hero-tags">
+          <span class="tag">CPF 417.652.980-10</span>
+          <span class="tag">Nasc. 17/09/1994</span>
+        </div>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Autodeclaração étnico-racial</div>
+        <p class="lead">Eu, <strong>LUCAS HENRIQUE OLIVEIRA</strong>, nascido(a) em <strong>17/09/1994</strong>, portador(a) do CPF <strong>417.652.980-10</strong>, declaro pertencer à seguinte categoria, para fins das ações de promoção da igualdade racial:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check"></span> Indígena</div>
+          <div class="opt"><span class="check"></span> Branca</div>
+          <div class="opt"><span class="check"></span> Preta</div>
+          <div class="opt"><span class="check"></span> Amarela</div>
+          <div class="opt"><span class="check">X</span> Parda</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">24/03/2026</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Adiantamento salarial</div>
+        <table class="data data-spaced">
+          <tr><td class="k">Cargo</td><td class="v">Assistente administrativo</td></tr>
+        </table>
+        <p class="lead lead-tight">Manifestação sobre adesão ao adiantamento salarial:</p>
+        <div class="options-grid single">
+          <div class="opt"><span class="check"></span> Não desejo aderir ao adiantamento salarial</div>
+          <div class="opt"><span class="check">X</span> Desejo aderir ao adiantamento salarial</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">24/03/2026</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+        </div>
+      </div>
+
+      <div class="page-foot">Folha A4 · Página 3 de 5 · Autodeclaração e adiantamento</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 4/5 — Vale transporte e identidade de gênero ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Transporte · Identidade</span>
+        <h1 class="sheet-title-sm">LUCAS HENRIQUE OLIVEIRA</h1>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Regras para o vale transporte</div>
+        <div class="callout">O colaborador deve providenciar 1a ou 2a via do cartao TOP e regularizar em ate 15 dias da admissao para garantir recarga complementar sem interrupcoes.</div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">24/03/2026</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Ciência e assinatura do(a) colaborador(a)<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">Termo de declaração de identidade de gênero</div>
+        <p class="lead">Eu, <strong>LUCAS HENRIQUE OLIVEIRA</strong>, nascido(a) em <strong>17/09/1994</strong>, CPF <strong>417.652.980-10</strong>, declaro que minha identidade de gênero é:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check">X</span> Cisgênero</div>
+          <div class="opt"><span class="check"></span> Transgênero</div>
+          <div class="opt"><span class="check"></span> Não-binário</div>
+          <div class="opt"><span class="check"></span> Gênero-fluido</div>
+          <div class="opt"><span class="check"></span> Agênero</div>
+          <div class="opt"><span class="check"></span> Bigênero</div>
+          <div class="opt"><span class="check"></span> Demigênero</div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">24/03/2026</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+        </div>
+      </div>
+
+      <div class="page-foot">Folha A4 · Página 4 de 5 · Vale transporte e identidade de gênero</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 5/5 — Orientação sexual ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header">
+        <span class="badge">Diversidade · Privacidade</span>
+        <h1 class="sheet-title-sm">LUCAS HENRIQUE OLIVEIRA</h1>
+        <div class="hero-tags">
+          <span class="tag">CPF 417.652.980-10</span>
+        </div>
+      </header>
+
+      <div class="section-card">
+        <div class="section-title">Termo de declaração de orientação sexual</div>
+        <p class="lead">Eu, <strong>LUCAS HENRIQUE OLIVEIRA</strong>, nascido(a) em <strong>17/09/1994</strong>, CPF <strong>417.652.980-10</strong>, declaro, de forma livre e voluntária, minha orientação sexual como:</p>
+        <div class="options-grid">
+          <div class="opt"><span class="check">X</span> Heterossexual</div>
+          <div class="opt"><span class="check"></span> Homossexual</div>
+          <div class="opt"><span class="check"></span> Bissexual</div>
+          <div class="opt"><span class="check"></span> Prefiro não declarar</div>
+          <div class="opt opt-full"><span class="check"></span> Outros — especificar: <strong></strong></div>
+        </div>
+        <div class="meta-row">
+          <span class="meta-label">Data</span>
+          <span class="meta-value">24/03/2026</span>
+        </div>
+        <div class="sig">
+          <div class="sig-line"></div>
+          <div class="sig-space"></div>
+          <p class="sig-caption">Assinatura do(a) colaborador(a)<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+        </div>
+      </div>
+
+      <p class="foot-note">
+        As informações de identidade de gênero e orientação sexual são tratadas com confidencialidade, nos termos da legislação aplicável e das políticas internas da empresa.
+      </p>
+
+      <div class="page-foot">Folha A4 · Página 5 de 5 · Orientação sexual — fim do book admissional</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Folha A4 6/6 — Solicitação de Vale Transporte ========== -->
+<div class="page">
+  <div class="sheet">
+    <div class="sheet-accent"></div>
+    <div class="sheet-inner">
+      <header class="doc-header doc-header--compact">
+        <span class="badge">Vale Transporte · Fidelizza+</span>
+        <p class="muted-mini">LUCAS HENRIQUE OLIVEIRA · Fidelizza+ Solucoes e Servicos</p>
+      </header>
+
+      <div class="section-card" style="padding:12px 14px 14px;">
+        <div class="section-title">Solicitação de Vale Transporte</div>
+
+        <!-- Tipo de Movimentação -->
+        <div class="vt-row-inline" style="font-size:11px; font-weight:600; color:#1a1a1a; border:1px solid #e2e8ec; border-radius:5px; padding:6px 10px; margin-bottom:8px;">
+          <span class="vt-label" style="color:#1a1a1a; font-size:11px;">Tipo de Movimentação:</span>
+          <span class="vt-check-inline"><span class="vt-check-box">X</span> Inclusão</span>
+          <span class="vt-check-inline"><span class="vt-check-box"></span> Alteração</span>
+          <span class="vt-check-inline"><span class="vt-check-box"></span> Exclusão</span>
+        </div>
+
+        <!-- Dados da empresa e colaborador -->
+        <table class="data" style="margin-bottom:8px; font-size:10.5px;">
+          <tr>
+            <td class="k" style="width:38%;">Nome da empresa</td>
+            <td class="v">Fidelizza+ Soluções</td>
+          </tr>
+          <tr>
+            <td class="k">Endereço do Trabalho</td>
+            <td class="v">Avenida Tamboré, 267 – 27º andar – Barueri/SP</td>
+          </tr>
+          <tr>
+            <td class="k">Nome do Empregado</td>
+            <td class="v">LUCAS HENRIQUE OLIVEIRA</td>
+          </tr>
+          <tr>
+            <td class="k">CPF</td>
+            <td class="v">417.652.980-10</td>
+          </tr>
+          <tr>
+            <td class="k">Endereço</td>
+            <td class="v" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <span style="flex:1; min-width:120px;"><span class="vt-label">Endereço</span><span class="vt-value-line" style="min-width:80px;"></span></span>
+              <span><span class="vt-label">nº</span> <span class="vt-value-line" style="min-width:28px;"></span></span>
+              <span><span class="vt-label">CEP</span> <span class="vt-value-line" style="min-width:52px;"></span></span>
+            </td>
+          </tr>
+          <tr>
+            <td class="k">Complemento</td>
+            <td class="v"><span class="vt-value-line" style="min-width:140px;"></span></td>
+          </tr>
+          <tr>
+            <td class="k">Bairro / Município / Est.</td>
+            <td class="v" style="display:flex; gap:10px; flex-wrap:wrap;">
+              <span><span class="vt-label">Bairro</span> <span class="vt-value-line" style="min-width:70px;"></span></span>
+              <span><span class="vt-label">Município</span> <span class="vt-value-line" style="min-width:60px;"></span></span>
+              <span><span class="vt-label">Est.</span> <span class="vt-value-line" style="min-width:26px;"></span></span>
+            </td>
+          </tr>
+        </table>
+
+        <!-- Opção VT -->
+        <div style="border:1px solid #e2e8ec; border-radius:5px; padding:7px 10px; margin-bottom:8px; font-size:11px; font-weight:700; display:flex; align-items:center; gap:12px; background:#fafcfd;">
+          <span>Você opta pela utilização do Vale Transporte</span>
+          <span class="vt-check-inline"><span class="vt-check-box">X</span> <strong>SIM</strong></span>
+          <span class="vt-check-inline"><span class="vt-check-box"></span> <strong>NÃO</strong></span>
+        </div>
+
+        <!-- Meio de Transporte -->
+        <div class="vt-section-title" style="margin-bottom:0; border-bottom:none;">MEIO DE TRANSPORTE UTILIZADO</div>
+        <div class="vt-warn" style="margin-bottom:6px;">Informamos que o preenchimento do nº da LINHA é obrigatório!!!!</div>
+
+        <table class="vt" style="margin-bottom:8px;">
+          <thead>
+            <tr>
+              <th style="width:24%;">Nome Cartão</th>
+              <th style="width:18%;">Nº da Linha</th>
+              <th style="width:15%;">Qtde Diária</th>
+              <th style="width:18%;">Valor da Tarifa</th>
+              <th>Já possui o cartão?</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>BEM BARUERI</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>BEM ITAPEVI</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>BEM STA. PAR</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>BEM JANDIRA</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>BEM OSASCO</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>PEC CARAP.</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td style="text-align:center;">R$ 5,80</td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>SPTRANS</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td></td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>TOP</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td></td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+            <tr>
+              <td>OUTROS</td>
+              <td><span class="vt-field"></span></td>
+              <td><span class="vt-field"></span></td>
+              <td></td>
+              <td class="vt-has">
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Sim</span>
+                &nbsp;–&nbsp;
+                <span class="vt-check-inline"><span class="vt-check-box"></span> Não</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Termos legais -->
+        <div class="vt-legal">
+          <p style="margin:0 0 5px;">Nos termos do Artigo 7º do Decreto No. 95.247 de 17 de novembro de 1987, solicito receber o Vale Transporte e comprometo-me:</p>
+          <p style="margin:0 0 3px;">a) Utilizá-lo exclusivamente para meu efetivo deslocamento residência-trabalho e vice-versa;</p>
+          <p style="margin:0 0 3px;">b) A renovar anualmente ou sempre que ocorrer alteração no meu endereço residencial ou dos serviços e meios de transporte mais adequados ao meu deslocamento residência/trabalho e vice-versa;</p>
+          <p style="margin:0 0 3px;">c) Autorizo a descontar até 6% (seis por cento) do meu salário básico mensal para contribuir no custeio do Vale-Transporte (conforme o artigo 9º do Decreto No. 95.247/87).</p>
+          <p style="margin:0;">d) Estou ciente de que a declaração falsa ou o uso indevido do Vale-transporte constituem falta grave (conforme o inciso 3º do artigo 7º do Decreto No. 95.247/87).</p>
+        </div>
+
+        <!-- Assinatura -->
+        <div class="vt-sig-row">
+          <div class="vt-sig-date">
+            <span class="vt-sig-date-line">___/___/______</span>
+            <span style="font-size:10px; color:#5a6570;">Data</span>
+          </div>
+          <div class="vt-sig-main">
+            <div class="vt-sig-line-full"></div>
+            <p class="sig-caption" style="text-align:right;">Assinatura do funcionário:<br><strong>LUCAS HENRIQUE OLIVEIRA</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-foot">Folha A4 · Página 6 de 6 · Solicitação de Vale Transporte</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

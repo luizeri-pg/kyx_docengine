@@ -1,0 +1,40 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=docengine;Username=postgres;Password=postgres"
+  },
+  "Database": {
+    "ApplyMigrationsOnStartup": true
+  },
+  "Logging": {
+    "PersistTbLogRequisicao": false
+  },
+  "Schema": {
+    "Usuario": {
+      "Id": "id",
+      "Nome": "nome",
+      "Email": "email",
+      "Login": "",
+      "Senha": "senha",
+      "PerfilId": "perfil_id",
+      "Ativo": "ativo",
+      "AtivoInverted": false,
+      "CriadoEm": "criado_em",
+      "AtualizadoEm": "atualizado_em",
+      "IdIntegerType": false,
+      "UniqueEmailIndex": true
+    },
+    "LogRequisicao": {
+      "Id": "id",
+      "RequisicaoId": "requisicao_id",
+      "UsuarioId": "usuario_id",
+      "Canal": "canal",
+      "CentroCusto": "centro_custo",
+      "RequestPayload": "request_payload",
+      "ResponsePayload": "response_payload",
+      "StatusHttp": "status_http",
+      "TempoRespostaMs": "tempo_resposta_ms",
+      "Erro": "erro",
+      "CriadoEm": "criado_em"
+    }
+  }
+}

@@ -1,0 +1,186 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ================================================
+   KYX - DocEngine - Estilos Globais
+   ================================================ */
+
+:root {
+  --color-primary: #10b981;
+  --color-primary-dark: #059669;
+  --color-bg-dark: #0f0f1a;
+  --color-bg-card: #1a1a2e;
+  --color-border: #2a2a4a;
+  --color-text: #e4e4f1;
+  --color-text-muted: #9898b5;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Outfit', system-ui, sans-serif;
+  background-color: var(--color-bg-dark);
+  color: var(--color-text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ================================================
+   Componentes Base
+   ================================================ */
+
+@layer components {
+  /* Cards */
+  .card {
+    @apply bg-kyx-950/50 backdrop-blur-sm border border-kyx-800/30 rounded-xl p-6;
+    @apply transition-all duration-300;
+  }
+
+  .card:hover {
+    @apply border-kyx-700/50 shadow-lg shadow-kyx-900/20;
+  }
+
+  /* Botões */
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-kyx-950;
+  }
+
+  .btn-primary {
+    @apply bg-kyx-600 text-white hover:bg-kyx-500;
+    @apply focus:ring-kyx-500;
+  }
+
+  .btn-secondary {
+    @apply bg-kyx-800/50 text-kyx-200 hover:bg-kyx-700/50;
+    @apply border border-kyx-700/30;
+  }
+
+  .btn-ghost {
+    @apply text-kyx-300 hover:bg-kyx-800/30 hover:text-white;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full px-4 py-3 rounded-lg;
+    @apply bg-kyx-950/80 border border-kyx-800/50;
+    @apply text-white placeholder-kyx-500;
+    @apply focus:outline-none focus:ring-2 focus:ring-kyx-500 focus:border-transparent;
+    @apply transition-all duration-200;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-success-500/20 text-success-500;
+  }
+
+  .badge-warning {
+    @apply bg-warning-500/20 text-warning-500;
+  }
+
+  .badge-danger {
+    @apply bg-danger-500/20 text-danger-500;
+  }
+
+  .badge-info {
+    @apply bg-kyx-600/15 text-kyx-300;
+  }
+
+  /* Tabelas */
+  .table-container {
+    @apply overflow-x-auto rounded-xl border border-kyx-800/30;
+  }
+
+  .table {
+    @apply w-full text-sm;
+  }
+
+  .table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-kyx-400 uppercase tracking-wider;
+    @apply bg-kyx-900/50 border-b border-kyx-800/30;
+  }
+
+  .table td {
+    @apply px-4 py-3 border-b border-kyx-800/20;
+  }
+
+  .table tbody tr {
+    @apply hover:bg-kyx-800/20 transition-colors;
+  }
+}
+
+/* ================================================
+   Animações
+   ================================================ */
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 15s ease infinite;
+}
+
+/* ================================================
+   Scrollbar Customizada
+   ================================================ */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #10b981;
+}
+
+/* ================================================
+   Utilitários
+   ================================================ */
+
+.text-gradient {
+  @apply bg-gradient-to-r from-kyx-400 to-kyx-600 bg-clip-text text-transparent;
+}
+
+.glow {
+  box-shadow: 0 0 20px rgba(74, 66, 229, 0.3);
+}
+
+.glow-success {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.glow-danger {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+

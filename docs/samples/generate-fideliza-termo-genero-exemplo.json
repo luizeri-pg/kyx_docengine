@@ -1,0 +1,14 @@
+{
+  "requisicaoId": "48897d30-1cf9-42a8-ba00-def416dd3950",
+  "config": {
+    "template": "fideliza_termo_genero",
+    "centroCusto": "sfairalimentos",
+    "nomeArquivo": "documento.pdf"
+  },
+  "dados": {
+    "nome": "RODRIGO ALMEIDA COSTA",
+    "cpf": "529.876.543-21",
+    "nameMae": "FERNANDA ALMEIDA",
+    "dataNascimento": "22/07/1988"
+  }
+}
