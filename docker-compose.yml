@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: docengine
+    # Sem mapeamento para o host: evita conflito com Postgres local. Acesso: docker compose exec postgres psql ...
+    volumes:
+      - docengine_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d docengine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend/KYX.DocEngine.API
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:3000
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=docengine;Username=postgres;Password=postgres"
+      ConnectionStrings__Redis: redis:6379
+      Hangfire__Storage: Redis
+      Database__ApplyMigrationsOnStartup: "true"
+      Cors__AllowedOrigins__0: "http://localhost:8088"
+      Cors__AllowedOrigins__1: "http://127.0.0.1:8088"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+    ports:
+      - "8088:80"
+    depends_on:
+      - api
+
+volumes:
+  docengine_pg:

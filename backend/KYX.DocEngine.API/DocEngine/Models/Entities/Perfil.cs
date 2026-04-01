@@ -10,18 +10,17 @@ public class Perfil
     [Column("id")]
     public string Id { get; set; } = Guid.NewGuid().ToString();
 
-    [Required]
     [Column("nome")]
-    public string Nome { get; set; } = string.Empty;
+    public string? Nome { get; set; }
 
     [Column("descricao")]
     public string? Descricao { get; set; }
 
     [Column("criado_em")]
-    public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
+    public DateTime? CriadoEm { get; set; }
 
     [Column("atualizado_em")]
-    public DateTime AtualizadoEm { get; set; } = DateTime.UtcNow;
+    public DateTime? AtualizadoEm { get; set; }
 
     public virtual ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
     public virtual ICollection<PerfilRole> PerfilRoles { get; set; } = new List<PerfilRole>();

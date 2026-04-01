@@ -7,6 +7,7 @@ namespace KYX.DocEngine.API.Configuration;
 public class SchemaTableOptions
 {
     public UsuarioColumnOptions Usuario { get; set; } = new();
+    public PerfilColumnOptions Perfil { get; set; } = new();
     public LogRequisicaoColumnOptions LogRequisicao { get; set; } = new();
 }
 
@@ -32,6 +33,22 @@ public class UsuarioColumnOptions
     public bool IdIntegerType { get; set; } = false;
     /// <summary>Se <c>false</c>, o índice em email não é único (bases legadas).</summary>
     public bool UniqueEmailIndex { get; set; } = true;
+}
+
+public class PerfilColumnOptions
+{
+    public string Id { get; set; } = "id";
+    public string Nome { get; set; } = "nome";
+    /// <summary>Nome real da coluna 'descricao'. Vazio = ignorada (sem coluna na tabela legada).</summary>
+    public string Descricao { get; set; } = "descricao";
+    public string CriadoEm { get; set; } = "criado_em";
+    /// <summary>
+    /// Coluna de atualização. Se for igual a <see cref="CriadoEm"/>, o EF ignora <c>AtualizadoEm</c> no modelo
+    /// (uma coluna só — típico em <c>tb_perfil</c> legado).
+    /// </summary>
+    public string AtualizadoEm { get; set; } = "atualizado_em";
+    /// <summary>Se true, a PK na BD é integer; em memória continua string.</summary>
+    public bool IdIntegerType { get; set; } = false;
 }
 
 public class LogRequisicaoColumnOptions

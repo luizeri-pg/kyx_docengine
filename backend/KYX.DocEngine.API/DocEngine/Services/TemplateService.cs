@@ -1,5 +1,6 @@
 using System.Text.Json;
 using KYX.DocEngine.API.Data;
+using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,14 +20,31 @@ public interface ITemplateService
 public class TemplateService : ITemplateService
 {
     private readonly DocEngineDbContext _db;
+    private readonly ILogger<TemplateService> _logger;
 
-    public TemplateService(DocEngineDbContext db)
+    public TemplateService(DocEngineDbContext db, ILogger<TemplateService> logger)
     {
         _db = db;
+        _logger = logger;
     }
 
-    public Task<List<Template>> ListActiveAsync() =>
-        _db.Templates.Where(t => t.IsActive).OrderByDescending(t => t.CreatedAt).ToListAsync();
+    public async Task<List<Template>> ListActiveAsync()
+    {
+        try
+        {
+            return await _db.Templates
+                .Where(t => t.IsActive)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+        }
+        catch (Exception ex) when (PostgresErrors.IsUndefinedTable(ex))
+        {
+            _logger.LogWarning(
+                ex,
+                "Tabela «templates» ausente. Ative Database:ApplyMigrationsOnStartup em Development ou execute «dotnet ef database update».");
+            return new List<Template>();
+        }
+    }
 
     public Task<Template?> GetByIdAsync(Guid id) => _db.Templates.FirstOrDefaultAsync(t => t.Id == id);
 

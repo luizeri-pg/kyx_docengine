@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LogIn, AlertCircle, FileText } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { API_BASE_URL, authApi } from '../services/api';
+import { decodeJwtPayload } from '../utils/jwt';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -25,24 +26,29 @@ export function LoginPage() {
       
       if (response.sucesso && response.resultado) {
         const token = response.resultado.access_token;
-        const tokenParts = token.split('.');
-        const payload = JSON.parse(atob(tokenParts[1] || ''));
+        const payload = decodeJwtPayload(token);
         const roleClaim =
-          payload.role ||
-          payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ||
+          (payload.role as string | undefined) ||
+          (payload[
+            'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'
+          ] as string | undefined) ||
           'admin';
         const roles = String(roleClaim)
           .split(',')
           .map((r: string) => r.trim().toLowerCase())
           .filter(Boolean);
         const nameIdentifier =
-          payload.nameid ||
-          payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+          (payload.nameid as string | undefined) ||
+          (payload[
+            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'
+          ] as string | undefined) ||
           username;
         const displayName =
-          payload.unique_name ||
-          payload.name ||
-          payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ||
+          (payload.unique_name as string | undefined) ||
+          (payload.name as string | undefined) ||
+          (payload[
+            'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'
+          ] as string | undefined) ||
           username;
         
         login(token, {
@@ -64,7 +70,9 @@ export function LoginPage() {
         err.message === 'Network Error' ||
         (!err.response && err.request);
       const errorMessage = isOffline
-        ? `Não foi possível ligar à API em ${API_BASE_URL}. Inicie o backend: na pasta backend/KYX.DocEngine.API execute «dotnet run» (porta 3000 por defeito).`
+        ? `Não foi possível ligar à API${
+            API_BASE_URL === '/api' ? ' (proxy /api → localhost:3000)' : ` em ${API_BASE_URL}`
+          }. Inicie o backend: na pasta backend/KYX.DocEngine.API execute «dotnet run» (porta 3000 por defeito).`
         : err.response?.data?.mensagem || err.message || 'Credenciais inválidas ou servidor indisponível';
       setError(errorMessage);
       console.error('Erro no login:', err);

@@ -49,12 +49,32 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
     public async Task<byte[]> RenderAsync(string htmlTemplate, Dictionary<string, string> dados)
     {
         var html = InjectData(htmlTemplate, dados);
-        await new BrowserFetcher().DownloadAsync();
-        await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+        var chromePath =
+            Environment.GetEnvironmentVariable("CHROME_EXECUTABLE_PATH")
+            ?? Environment.GetEnvironmentVariable("PUPPETEER_EXECUTABLE_PATH");
+
+        var launch = new LaunchOptions
         {
             Headless = true,
-            Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
-        });
+            Args = new[]
+            {
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu"
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(chromePath))
+        {
+            launch.ExecutablePath = chromePath;
+        }
+        else
+        {
+            await new BrowserFetcher().DownloadAsync();
+        }
+
+        await using var browser = await Puppeteer.LaunchAsync(launch);
         await using var page = await browser.NewPageAsync();
         await page.SetContentAsync(html, new NavigationOptions
         {

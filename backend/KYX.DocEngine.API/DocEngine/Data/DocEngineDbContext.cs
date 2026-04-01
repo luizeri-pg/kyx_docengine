@@ -38,6 +38,7 @@ public class DocEngineDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         var su = _schema.Usuario;
+        var sp = _schema.Perfil;
         var lr = _schema.LogRequisicao;
 
         modelBuilder.Entity<Template>()
@@ -79,7 +80,7 @@ public class DocEngineDbContext : DbContext
                 entity.Property(e => e.Login).HasColumnName(su.Login);
             }
 
-            entity.Property(e => e.Senha).HasColumnName(su.Senha);
+            entity.Property(e => e.Senha).HasColumnName(su.Senha).IsRequired(false);
 
             var ativoProp = entity.Property(e => e.Ativo).HasColumnName(su.Ativo);
             if (su.AtivoInverted)
@@ -88,7 +89,11 @@ public class DocEngineDbContext : DbContext
             }
 
             entity.Property(e => e.CriadoEm).HasColumnName(su.CriadoEm);
-            entity.Property(e => e.AtualizadoEm).HasColumnName(su.AtualizadoEm);
+            // EF Core não permite duas propriedades na mesma coluna; bases legadas com só dh_inclui, etc.
+            if (string.Equals(su.CriadoEm, su.AtualizadoEm, StringComparison.OrdinalIgnoreCase))
+                entity.Ignore(e => e.AtualizadoEm);
+            else
+                entity.Property(e => e.AtualizadoEm).HasColumnName(su.AtualizadoEm);
 
             if (string.IsNullOrWhiteSpace(su.PerfilId))
             {
@@ -150,6 +155,29 @@ public class DocEngineDbContext : DbContext
 
         modelBuilder.Entity<Perfil>(entity =>
         {
+            entity.HasKey(e => e.Id);
+
+            var perfilIdProp = entity.Property(e => e.Id).HasColumnName(sp.Id);
+            if (sp.IdIntegerType)
+            {
+                perfilIdProp.HasConversion(new ValueConverter<string, int>(
+                    s => int.Parse(s, CultureInfo.InvariantCulture),
+                    i => i.ToString(CultureInfo.InvariantCulture)));
+            }
+
+            entity.Property(e => e.Nome).HasColumnName(sp.Nome).IsRequired(false);
+
+            if (string.IsNullOrWhiteSpace(sp.Descricao))
+                entity.Ignore(e => e.Descricao);
+            else
+                entity.Property(e => e.Descricao).HasColumnName(sp.Descricao).IsRequired(false);
+
+            entity.Property(e => e.CriadoEm).HasColumnName(sp.CriadoEm).IsRequired(false);
+            if (string.Equals(sp.CriadoEm, sp.AtualizadoEm, StringComparison.OrdinalIgnoreCase))
+                entity.Ignore(e => e.AtualizadoEm);
+            else
+                entity.Property(e => e.AtualizadoEm).HasColumnName(sp.AtualizadoEm).IsRequired(false);
+
             entity.HasIndex(e => e.Nome);
         });
 

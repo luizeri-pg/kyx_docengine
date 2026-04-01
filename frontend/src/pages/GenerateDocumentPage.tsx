@@ -1,8 +1,31 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { documentsApi, templatesApi, type TemplateResponse } from '../services/api';
+import {
+  documentsApi,
+  templatesApi,
+  type GenerateDocumentApiResponse,
+  type TemplateResponse,
+} from '../services/api';
+import { parseDadosJsonForApi } from '../utils/flattenDados';
 
-/** Alinhado ao SDD: POST /documents/generate com requisicaoId, config (template slug, centroCusto, nomeArquivo), dados. */
+const EXEMPLO_DADOS_ANINHADOS = `{
+  "guiaNumero": "19368736",
+  "guiaDataEmissao": "18/11/2025",
+  "empresa": {
+    "nome": "IDEMIA IDENTITY & SECURITY FRANCE PARA O BRASIL",
+    "unidade": "IDEMIA IDENTITY & SECURITY",
+    "cnpj": "44.699.235/0001-99"
+  },
+  "funcionario": {
+    "nome": "ALESSANDRO OSVALDIR CARVALHO",
+    "cpf": "131.304.658-20"
+  },
+  "exames": [
+    { "tuss": "10101012", "nome": "Avaliação clínica" }
+  ]
+}`;
+
+/** POST /documents/generate — dados planos ou JSON aninhado (achatado para a API). Resposta: envelope ApiResponse. */
 export function GenerateDocumentPage() {
   const navigate = useNavigate();
   const [templates, setTemplates] = useState<TemplateResponse[]>([]);
@@ -10,7 +33,11 @@ export function GenerateDocumentPage() {
   const [templateSlug, setTemplateSlug] = useState('');
   const [centroCusto, setCentroCusto] = useState('');
   const [nomeArquivo, setNomeArquivo] = useState('documento.pdf');
-  const [dadosText, setDadosText] = useState('{\n  "nome": "Fulano",\n  "cpf": "00000000000"\n}');
+  const [dadosText, setDadosText] = useState(
+    '{\n  "nome": "Fulano",\n  "cpf": "00000000000"\n}'
+  );
+  const [dadosFlattenPreview, setDadosFlattenPreview] = useState<string | null>(null);
+  const [lastResponse, setLastResponse] = useState<GenerateDocumentApiResponse | null>(null);
   const [jobId, setJobId] = useState('');
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
@@ -33,16 +60,16 @@ export function GenerateDocumentPage() {
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
+    setLastResponse(null);
+    setDadosFlattenPreview(null);
     setLoading(true);
     try {
       let dados: Record<string, string>;
       try {
-        const parsed = JSON.parse(dadosText) as Record<string, unknown>;
-        dados = Object.fromEntries(
-          Object.entries(parsed).map(([k, v]) => [k, v === null || v === undefined ? '' : String(v)])
-        );
+        dados = parseDadosJsonForApi(dadosText);
+        setDadosFlattenPreview(JSON.stringify(dados, null, 2));
       } catch {
-        setError('JSON de dados inválido.');
+        setError('JSON de dados inválido (sintaxe ou raiz precisa ser um objeto).');
         setLoading(false);
         return;
       }
@@ -56,12 +83,10 @@ export function GenerateDocumentPage() {
         },
         dados,
       });
+      setLastResponse(response);
       const jid = response.resultado?.jobId || '';
       setJobId(jid);
       setStatus(response.resultado?.status || 'queued');
-      if (jid) {
-        navigate(`/jobs?jobId=${encodeURIComponent(jid)}`);
-      }
     } catch (err: unknown) {
       const e = err as { response?: { data?: { mensagem?: string } } };
       setError(e?.response?.data?.mensagem || 'Falha ao gerar documento.');
@@ -75,9 +100,13 @@ export function GenerateDocumentPage() {
       <div>
         <h2 className="text-2xl font-bold text-white">Gerar documento</h2>
         <p className="text-kyx-400 max-w-2xl">
-          Enfileira um job de geração de PDF conforme SDD: <code className="text-kyx-200">requisicaoId</code>,{' '}
-          <code className="text-kyx-200">config.template</code> (slug), <code className="text-kyx-200">centroCusto</code>,{' '}
-          <code className="text-kyx-200">dados</code> (chaves = campos do template).
+          Corpo alinhado ao backend: <code className="text-kyx-200">requisicaoId</code>,{' '}
+          <code className="text-kyx-200">config</code> (template, centroCusto, nomeArquivo),{' '}
+          <code className="text-kyx-200">dados</code>. Objetos e listas no JSON são{' '}
+          <strong className="text-kyx-300">achatados</strong> para{' '}
+          <code className="text-kyx-200">Record&lt;string, string&gt;</code> (ex.:{' '}
+          <code className="text-kyx-200">empresa.nome</code>, <code className="text-kyx-200">exames.0.tuss</code>) — use
+          as mesmas chaves no HTML do template.
         </p>
       </div>
 
@@ -118,13 +147,49 @@ export function GenerateDocumentPage() {
             <input className="input" value={nomeArquivo} onChange={(e) => setNomeArquivo(e.target.value)} />
           </div>
           <div>
-            <label className="block text-xs text-kyx-500 mb-1">dados (JSON — valores string)</label>
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <label className="block text-xs text-kyx-500">dados (JSON — plano ou aninhado)</label>
+              <button
+                type="button"
+                className="btn text-xs"
+                onClick={() => setDadosText(EXEMPLO_DADOS_ANINHADOS)}
+              >
+                Carregar exemplo aninhado
+              </button>
+            </div>
             <textarea className="input min-h-[220px] font-mono text-sm" value={dadosText} onChange={(e) => setDadosText(e.target.value)} required />
           </div>
           <button className="btn btn-primary" type="submit" disabled={loading || loadingTemplates}>
             {loading ? 'Enfileirando…' : 'POST /documents/generate'}
           </button>
         </form>
+
+        {dadosFlattenPreview && (
+          <div className="p-3 rounded-lg border border-kyx-800/40 bg-kyx-950/50">
+            <p className="text-xs text-kyx-400 mb-1">Payload enviado em <code className="text-kyx-300">dados</code> (após achatamento)</p>
+            <pre className="text-xs text-kyx-300 font-mono whitespace-pre-wrap break-all max-h-40 overflow-auto">{dadosFlattenPreview}</pre>
+          </div>
+        )}
+
+        {lastResponse && (
+          <div className="p-3 rounded-lg border border-kyx-700/50 bg-kyx-900/40 space-y-2">
+            <p className="text-sm font-semibold text-white">Resposta da API (envelope)</p>
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <dt className="text-kyx-500">sucesso</dt>
+              <dd className="text-kyx-200 font-mono">{String(lastResponse.sucesso)}</dd>
+              <dt className="text-kyx-500">mensagem</dt>
+              <dd className="text-kyx-200 font-mono break-all">{lastResponse.mensagem ?? '—'}</dd>
+              <dt className="text-kyx-500">tempoProcessamento (ms)</dt>
+              <dd className="text-kyx-200 font-mono">{lastResponse.tempoProcessamento}</dd>
+              <dt className="text-kyx-500">requisicaoId</dt>
+              <dd className="text-kyx-200 font-mono break-all">{lastResponse.requisicaoId}</dd>
+              <dt className="text-kyx-500">resultado.jobId</dt>
+              <dd className="text-kyx-200 font-mono break-all">{lastResponse.resultado?.jobId ?? '—'}</dd>
+              <dt className="text-kyx-500">resultado.status</dt>
+              <dd className="text-kyx-200 font-mono">{lastResponse.resultado?.status ?? '—'}</dd>
+            </dl>
+          </div>
+        )}
 
         {jobId && (
           <div className="p-3 rounded-lg bg-kyx-900/30 border border-kyx-800/40">
@@ -133,7 +198,7 @@ export function GenerateDocumentPage() {
             </p>
             <p className="text-kyx-400 text-sm">Status: {status}</p>
             <button type="button" className="btn btn-primary mt-2 text-sm" onClick={() => navigate(`/jobs?jobId=${encodeURIComponent(jobId)}`)}>
-              Abrir polling em Jobs
+              Ir para Jobs — polling e download do PDF
             </button>
           </div>
         )}

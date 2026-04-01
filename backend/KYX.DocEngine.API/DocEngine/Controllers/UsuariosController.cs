@@ -7,24 +7,25 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace KYX.DocEngine.API.Controllers;
 
-/// <summary>Gestão de usuários do painel (armazenamento em memória no DocEngine).</summary>
+/// <summary>Gestão de usuários do painel — lê e persiste em <c>tb_usuario</c> / <c>tb_perfil</c> (EF).</summary>
 [ApiController]
 [Authorize]
 [Route("usuarios")]
 public class UsuariosController : ControllerBase
 {
-    private readonly InMemoryUsuarioStore _store;
+    private readonly IUsuarioAdminService _usuarios;
 
-    public UsuariosController(InMemoryUsuarioStore store)
+    public UsuariosController(IUsuarioAdminService usuarios)
     {
-        _store = store;
+        _usuarios = usuarios;
     }
 
+    /// <summary>Lista utilizadores. Por omissão inclui ativos e inativos. Use <c>?apenasAtivos=true</c> para filtrar.</summary>
     [HttpGet]
-    public IActionResult List()
+    public async Task<IActionResult> List([FromQuery] bool apenasAtivos = false, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
-        var list = _store.ListUsuarios();
+        var list = await _usuarios.ListAsync(apenasAtivos, cancellationToken);
         return Ok(new ApiResponse<IReadOnlyList<UsuarioDto>>
         {
             Sucesso = true,
@@ -35,10 +36,10 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpGet("perfis/list")]
-    public IActionResult Perfis()
+    public async Task<IActionResult> Perfis(CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
-        var list = _store.ListPerfis();
+        var list = await _usuarios.ListPerfisAsync(cancellationToken);
         return Ok(new ApiResponse<IReadOnlyList<PerfilDto>>
         {
             Sucesso = true,
@@ -49,7 +50,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPost]
-    public IActionResult Create([FromBody] CreateUsuarioRequest? body)
+    public async Task<IActionResult> Create([FromBody] CreateUsuarioRequest? body, CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
         var rid = Guid.NewGuid().ToString();
@@ -66,7 +67,7 @@ public class UsuariosController : ControllerBase
 
         try
         {
-            var u = _store.Create(body);
+            var u = await _usuarios.CreateAsync(body, cancellationToken);
             return StatusCode(201, new ApiResponse<UsuarioDto>
             {
                 Sucesso = true,
@@ -89,7 +90,7 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public IActionResult Update(string id, [FromBody] UpdateUsuarioRequest? body)
+    public async Task<IActionResult> Update(string id, [FromBody] UpdateUsuarioRequest? body, CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
         var rid = Guid.NewGuid().ToString();
@@ -106,7 +107,7 @@ public class UsuariosController : ControllerBase
 
         try
         {
-            var u = _store.Update(id, body);
+            var u = await _usuarios.UpdateAsync(id, body, cancellationToken);
             if (u is null)
             {
                 return NotFound(new ApiResponse<object>
@@ -140,11 +141,11 @@ public class UsuariosController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(string id)
+    public async Task<IActionResult> Delete(string id, CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
         var rid = Guid.NewGuid().ToString();
-        if (!_store.Delete(id))
+        if (!await _usuarios.DeactivateAsync(id, cancellationToken))
         {
             return NotFound(new ApiResponse<object>
             {
@@ -158,7 +159,7 @@ public class UsuariosController : ControllerBase
         return Ok(new ApiResponse<object?>
         {
             Sucesso = true,
-            Mensagem = "Usuário removido.",
+            Mensagem = "Usuário desativado.",
             RequisicaoId = rid,
             TempoProcessamento = sw.ElapsedMilliseconds,
             Resultado = null

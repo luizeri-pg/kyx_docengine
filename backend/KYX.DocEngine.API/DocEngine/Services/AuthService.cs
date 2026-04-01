@@ -163,7 +163,7 @@ public partial class AuthService : IAuthService
     /// <summary>
     /// BCrypt (preferencial) ou MD5 hex UTF-8 quando <see cref="AuthSettings.PasswordVerification"/> = BcryptOrMd5Hex.
     /// </summary>
-    private bool PasswordMatches(string plainPassword, string storedHash)
+    private bool PasswordMatches(string plainPassword, string? storedHash)
     {
         if (string.IsNullOrEmpty(storedHash))
         {

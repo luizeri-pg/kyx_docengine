@@ -11,6 +11,7 @@ using KYX.DocEngine.API.Services;
 using KYX.DocEngine.API.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -28,7 +29,9 @@ builder.Services.AddDbContext<DocEngineDbContext>(options =>
     options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
         npgsql => npgsql.MigrationsAssembly("KYX.DocEngine.API"))
-        .UseSnakeCaseNamingConvention());
+        .UseSnakeCaseNamingConvention()
+        // O snapshot de migrações não espelha o mapeamento dinâmico em Schema:* (appsettings); evita falhar Migrate() em dev.
+        .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
 var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
@@ -92,7 +95,7 @@ builder.Services.AddHangfireServer(options =>
     options.Queues = new[] { "documents", "default" };
 });
 
-builder.Services.AddSingleton<InMemoryUsuarioStore>();
+builder.Services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITemplateService, TemplateService>();
@@ -104,6 +107,12 @@ builder.Services.AddScoped<IDocumentWorker, DocumentWorker>();
 
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:5173", "http://localhost:5174" };
+// Seção vazia no JSON vira [] (não null) — sem isso o CORS não libera nenhuma origem.
+if (corsOrigins.Length == 0)
+{
+    corsOrigins = new[] { "http://localhost:5173", "http://localhost:5174" };
+}
+
 // Mesmas origens com 127.0.0.1 (alguns browsers / Vite usam isso no Origin)
 var corsOriginsExpanded = corsOrigins
     .SelectMany(o =>
@@ -134,28 +143,23 @@ builder.Services.AddCors(options =>
         // Não usar AllowCredentials() aqui: o front usa Bearer no header, não cookies.
         // AllowCredentials + política dinâmica costuma omitir Access-Control-Allow-Origin em alguns cenários.
         policy.AllowAnyHeader().AllowAnyMethod();
-        if (isDevelopment)
+        // Sempre: loopback em qualquer porta (Vite, API em Production local, etc.) + origens explícitas em produção.
+        var allowedExact = new HashSet<string>(corsOriginsExpanded, StringComparer.OrdinalIgnoreCase);
+        policy.SetIsOriginAllowed(origin =>
         {
-            // Qualquer porta em localhost / 127.0.0.1 (Vite pode mudar de porta)
-            policy.SetIsOriginAllowed(origin =>
+            if (string.IsNullOrWhiteSpace(origin)) return false;
+            try
             {
-                if (string.IsNullOrEmpty(origin)) return false;
-                try
-                {
-                    var uri = new Uri(origin);
-                    return uri.Scheme is "http" or "https"
-                           && (uri.Host == "localhost" || uri.Host == "127.0.0.1");
-                }
-                catch
-                {
-                    return false;
-                }
-            });
-        }
-        else
-        {
-            policy.WithOrigins(corsOriginsExpanded);
-        }
+                var uri = new Uri(origin);
+                if (uri.Scheme is not ("http" or "https")) return false;
+                if (uri.Host is "localhost" or "127.0.0.1") return true;
+                return allowedExact.Contains(origin.TrimEnd('/'));
+            }
+            catch (UriFormatException)
+            {
+                return false;
+            }
+        });
     });
 });
 
@@ -252,8 +256,12 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 app.MapControllers();
 
-var port = builder.Configuration.GetValue<int>("Port", 3000);
-app.Urls.Add($"http://localhost:{port}");
+// Em Docker use ASPNETCORE_URLS=http://+:3000 (localhost dentro do container não recebe tráfego do host).
+if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    var port = builder.Configuration.GetValue<int>("Port", 3000);
+    app.Urls.Add($"http://localhost:{port}");
+}
 
 app.Run();
 

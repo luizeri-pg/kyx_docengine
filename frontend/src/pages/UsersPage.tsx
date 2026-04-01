@@ -80,7 +80,7 @@ export function UsersPage() {
     return items.filter(
       (u) =>
         u.nome.toLowerCase().includes(q) ||
-        u.email.toLowerCase().includes(q) ||
+        (u.email ?? '').toLowerCase().includes(q) ||
         (u.perfil?.nome ?? '').toLowerCase().includes(q)
     );
   }, [items, search]);
@@ -157,14 +157,14 @@ export function UsersPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm('Remover este usuário?')) return;
+    if (!window.confirm('Desativar este usuário na base? (não apaga a linha.)')) return;
     setError('');
     try {
       await usuariosApi.remove(id);
       await loadAll();
     } catch (err: unknown) {
       const ex = err as { response?: { data?: { mensagem?: string } } };
-      setError(ex?.response?.data?.mensagem || 'Falha ao remover usuário.');
+      setError(ex?.response?.data?.mensagem || 'Falha ao desativar usuário.');
     }
   };
 
@@ -174,7 +174,9 @@ export function UsersPage() {
         <div>
           <h2 className="text-2xl font-bold text-white">Gestão de Usuários</h2>
           <p className="text-kyx-400 max-w-2xl mt-1">
-            Gerencie usuários com acesso ao <span className="text-kyx-300">KYX DocEngine</span> (API ou painel administrativo).
+            Lista e alterações vêm da <span className="text-kyx-300">tb_usuario</span> /{' '}
+            <span className="text-kyx-300">tb_perfil</span> (conforme o mapeamento em{' '}
+            <code className="text-kyx-200">Schema:Usuario</code> no servidor). Excluir apenas desativa o registro.
           </p>
         </div>
         <button type="button" className="btn btn-primary inline-flex items-center gap-2 shrink-0" onClick={openCreate}>
@@ -290,7 +292,7 @@ export function UsersPage() {
                         <button
                           type="button"
                           className="p-2 rounded-lg text-kyx-400 hover:text-danger-500 hover:bg-danger-500/10"
-                          title="Excluir"
+                          title="Desativar"
                           onClick={() => remove(u.id)}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -349,7 +351,7 @@ export function UsersPage() {
                   className="input"
                   value={form.perfilId}
                   onChange={(e) => setForm((p) => ({ ...p, perfilId: e.target.value }))}
-                  required
+                  required={perfis.length > 0}
                 >
                   <option value="">Selecione…</option>
                   {perfis.map((p) => (

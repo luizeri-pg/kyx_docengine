@@ -1,8 +1,26 @@
 import axios from 'axios';
 import { useAuthStore } from '../stores/authStore';
 
-/** Base URL do DocEngine (backend). Sobrescreva com `VITE_API_URL` no `.env` se a API não estiver em localhost:3000. */
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+/** Base URL do DocEngine. Em dev, `/api` → proxy Vite (sem CORS). Se `VITE_API_URL` for `http://localhost:3000`, ignora-se em dev e usa-se o proxy. */
+function resolveApiBaseUrl(): string {
+  const raw = import.meta.env.VITE_API_URL?.trim();
+  if (import.meta.env.DEV) {
+    if (!raw) return '/api';
+    try {
+      const u = new URL(raw);
+      const port = u.port || (u.protocol === 'https:' ? '443' : '80');
+      const isLocalDocEngine =
+        (u.hostname === 'localhost' || u.hostname === '127.0.0.1') && port === '3000';
+      if (isLocalDocEngine) return '/api';
+    } catch {
+      /* URL inválida: usa o valor tal como está */
+    }
+    return raw;
+  }
+  return raw || 'http://localhost:3000';
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -89,6 +107,9 @@ export interface GenerateDocumentResponse {
   jobId: string;
   status: string;
 }
+
+/** Envelope HTTP 200 de POST /documents/generate */
+export type GenerateDocumentApiResponse = ApiResponse<GenerateDocumentResponse>;
 
 /** PDF síncrono — sem job na BD (requer Documents:AllowSyncPdfGeneration no backend). */
 export interface GenerateSyncPdfRequest {
@@ -283,8 +304,8 @@ export const templatesApi = {
 
 // ============ Documents API ============
 export const documentsApi = {
-  generate: async (payload: GenerateDocumentRequest) => {
-    const response = await api.post<ApiResponse<GenerateDocumentResponse>>('/documents/generate', payload);
+  generate: async (payload: GenerateDocumentRequest): Promise<GenerateDocumentApiResponse> => {
+    const response = await api.post<GenerateDocumentApiResponse>('/documents/generate', payload);
     return response.data;
   },
   /** Base64 do PDF na mesma resposta — sem document_jobs (só dev / flag no servidor). */
@@ -318,8 +339,11 @@ export const auditApi = {
 
 // ============ Usuários API ============
 export const usuariosApi = {
-  list: async () => {
-    const response = await api.get<ApiResponse<Usuario[]>>('/usuarios');
+  /** Por omissão pede todos (ativos e inativos). Use `{ apenasAtivos: true }` para só ativos. */
+  list: async (params?: { apenasAtivos?: boolean }) => {
+    const response = await api.get<ApiResponse<Usuario[]>>('/usuarios', {
+      params: params?.apenasAtivos ? { apenasAtivos: true } : undefined,
+    });
     return response.data;
   },
   perfis: async () => {

@@ -8,6 +8,7 @@ import { HistoricoPage } from './pages/HistoricoPage';
 import { AuditoriaPage } from './pages/AuditoriaPage';
 import { UsersPage } from './pages/UsersPage';
 import { NotifyIntegracoesPage } from './pages/NotifyIntegracoesPage';
+import { TemplatesPage } from './pages/TemplatesPage';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -37,6 +38,7 @@ export default function App() {
         <Route path="generate" element={<GenerateDocumentPage />} />
         <Route path="historico" element={<HistoricoPage />} />
         <Route path="auditoria" element={<AuditoriaPage />} />
+        <Route path="templates" element={<TemplatesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="integracoes" element={<NotifyIntegracoesPage />} />
       </Route>

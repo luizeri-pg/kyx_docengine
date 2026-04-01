@@ -14,7 +14,8 @@ public class Usuario
     public string? Email { get; set; }
     /// <summary>Login legado (ex.: str_login), quando mapeado em <c>Schema:Usuario:Login</c>.</summary>
     public string? Login { get; set; }
-    public string Senha { get; set; } = string.Empty;
+    /// <summary>Hash da senha; em bases legadas a coluna pode ser NULL.</summary>
+    public string? Senha { get; set; }
     public string PerfilId { get; set; } = string.Empty;
     public bool Ativo { get; set; } = true;
     public DateTime CriadoEm { get; set; } = DateTime.UtcNow;
