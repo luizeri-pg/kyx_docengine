@@ -31,3 +31,12 @@ jobs:
 
       - script: docker compose -f compose.yaml build
         displayName: Build api and web
+
+      - script: |
+          set -e
+          export REGISTRY=ci.local/docengine TAG=ci STACK_NAME=ci
+          export API_HOST=api.ci.local WEB_HOST=app.ci.local
+          export POSTGRES_USER=p POSTGRES_PASSWORD=p POSTGRES_DB=docengine
+          export JWT_SECRET_KEY=01234567890123456789012345678901
+          docker compose -f compose.stack.yaml config -q
+        displayName: Validar compose.stack.yaml (Swarm/Traefik)

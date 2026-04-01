@@ -10,6 +10,7 @@ using KYX.DocEngine.API.Middleware;
 using KYX.DocEngine.API.Services;
 using KYX.DocEngine.API.Workers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
@@ -203,6 +204,16 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Traefik / reverse proxy: respeitar HTTPS e host públicos (X-Forwarded-*).
+var forwarded = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    ForwardLimit = 2
+};
+forwarded.KnownNetworks.Clear();
+forwarded.KnownProxies.Clear();
+app.UseForwardedHeaders(forwarded);
 
 // Migrações automáticas (templates, document_jobs, tb_log_requisicao). Desligado por defeito — ver Database:ApplyMigrationsOnStartup.
 var applyMigrations = builder.Configuration.GetValue("Database:ApplyMigrationsOnStartup", false);
