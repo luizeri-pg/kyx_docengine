@@ -1,35 +1,20 @@
-# =============================================================================
-# Pipeline Azure DevOps — caminho obrigatório no ADO: /azure-pipelines.yml
-#
-# Erro "Could not find valid pipeline YAML"?
-#  • O commit b7595cb NÃO tinha este ficheiro — atualiza o branch main no Repos (último main).
-#  • Pipeline "docengine" → Editar → ⋮ (More actions) → Triggers → YAML →
-#    "YAML file path" = /azure-pipelines.yml
-#    NÃO uses compose.yaml como pipeline. Não há docker-compose.yml na raiz (o ADO validava-o
-#    como pipeline e falhava). Stack Docker: ficheiro compose.yaml — comando: docker compose up
-# =============================================================================
+# Path in ADO must be: /azure-pipelines.yml (not compose.yaml)
 trigger:
-  branches:
-    include:
-      - main
+  - main
 
-stages:
-  - stage: CI
-    displayName: CI
-    jobs:
-      - job: DockerComposeBuild
-        displayName: Validar e build Compose
-        pool:
-          vmImage: ubuntu-latest
-        steps:
-          - checkout: self
-            fetchDepth: 1
+jobs:
+  - job: Build
+    displayName: Docker Compose
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
 
-          - script: docker compose version
-            displayName: Versão Docker Compose
+      - script: docker compose version
+        displayName: Compose version
 
-          - script: docker compose -f compose.yaml config
-            displayName: Validar compose.yaml
+      - script: docker compose -f compose.yaml config
+        displayName: Validate compose.yaml
 
-          - script: docker compose -f compose.yaml build
-            displayName: Build imagens (api + web)
+      - script: docker compose -f compose.yaml build
+        displayName: Build api and web
