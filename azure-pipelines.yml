@@ -1,7 +1,7 @@
 # Path in ADO: /azure-pipelines.yml
 #
 # Pool: vmImage (ubuntu-latest) exige o pool alojado "Azure Pipelines" autorizado na org.
-# Se vês "Could not find a pool with name Azure Pipelines", usa um pool que existA no projeto:
+# Se vês "Could not find a pool with name Azure Pipelines", usa um pool que exista no projeto:
 #   Project Settings → Agent pools → copia o nome exato.
 #
 # Opção A — agentes self-hosted (nome típico Default):
