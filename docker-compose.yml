@@ -1,0 +1,4 @@
+# Aponta para o Compose canónico. `docker compose` junta este ficheiro com compose.yaml.
+# NÃO configures o Azure DevOps para usar docker-compose.yml como pipeline — usa /azure-pipelines.yml
+include:
+  - path: compose.yaml
