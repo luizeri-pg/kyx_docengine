@@ -2,7 +2,8 @@
 # Cria a rede overlay que o Traefik e o compose.stack.yaml esperam.
 set -euo pipefail
 
-if ! docker info 2>/dev/null | grep -q "Swarm: active"; then
+swarm_state="$(docker info -f '{{.Swarm.LocalNodeState}}' 2>/dev/null || echo inactive)"
+if [[ "$swarm_state" != "active" ]]; then
   echo "Swarm não está ativo. Corre primeiro: docker swarm init"
   exit 1
 fi
