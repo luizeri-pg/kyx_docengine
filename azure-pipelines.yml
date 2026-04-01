@@ -1,7 +1,13 @@
 # DocEngine — build/push + deploy Swarm (padrão NotifyHub, 1 API + web).
-# Variable groups: docengine_dev, docengine_hmg, docengine_prd
-#   Obrigatórios por ambiente: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, JWT_SECRET_KEY
-#   Opcionais (override API): ConnectionStrings__DefaultConnection, Jwt__*, Cors__AllowedOrigins__*, etc.
+#
+# Segredos (POSTGRES_*, JWT_SECRET_KEY, ConnectionStrings__*, Jwt__*, Cors__*, …):
+#   Opção A — Pipeline → Edit → Variables (ou Variable groups em Library). Mesmos nomes usados em env: abaixo.
+#   Opção B — Criar grupos docengine_dev / docengine_hmg / docengine_prd em Library, autorizar o pipeline
+#             (grupo → "Pipeline permissions" → Allow) e acrescentar em cada stage:
+#               variables:
+#                 - group: docengine_dev
+# Por ambiente (dev ≠ prd): usa variáveis nos Environments "hmg"/"prd" (Pipelines → Environments)
+# ou grupos Library distintos (como docengine_dev) depois de criados e autorizados.
 # Pools server28 / server31 e registry: ajusta ao teu ADO.
 #
 trigger:
@@ -76,8 +82,6 @@ stages:
   - stage: Deploy
     displayName: Deploy Dev
     dependsOn: Build
-    variables:
-      - group: docengine_dev
     jobs:
       - job: SwarmDeploy
         displayName: Deploy stack on Swarm manager (Dev)
@@ -123,8 +127,6 @@ stages:
   - stage: DeployHmg
     displayName: Deploy HMG
     dependsOn: Deploy
-    variables:
-      - group: docengine_hmg
     jobs:
       - deployment: SwarmDeployHmg
         displayName: Deploy stack on Swarm manager (HMG)
@@ -174,8 +176,6 @@ stages:
   - stage: DeployPrd
     displayName: Deploy PRD
     dependsOn: DeployHmg
-    variables:
-      - group: docengine_prd
     jobs:
       - deployment: SwarmDeployPrd
         displayName: Deploy stack on Swarm manager (PRD)
