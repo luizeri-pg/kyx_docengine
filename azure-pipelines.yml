@@ -1,36 +1,48 @@
-# Path in ADO: /azure-pipelines.yml
+# =============================================================================
+# Azure DevOps — ficheiro: /azure-pipelines.yml
 #
-# Pool: vmImage (ubuntu-latest) exige o pool alojado "Azure Pipelines" autorizado na org.
-# Se vês "Could not find a pool with name Azure Pipelines", usa um pool que exista no projeto:
-#   Project Settings → Agent pools → copia o nome exato.
+# 1) Pool: mantém "Default" (self-hosted) ou troca por vmImage: ubuntu-latest (hosted).
+# 2) Push para ACR (Azure Container Registry):
+#    - Project settings → Service connections → New → Docker Registry → Azure Container Registry
+#    - Cria uma ligação (ex.: acr-docengine)
+#    - Pipeline → Edit → Variables → New:
+#        ACR_SERVICE_CONNECTION = nome exato da service connection (ex.: acr-docengine)
+#        VITE_API_URL = URL pública da API (ex.: https://api.teudominio.com) — usada no build do front
+#    - Se ACR_SERVICE_CONNECTION ficar vazio, os passos Docker@2 são ignorados (só validação + build local).
 #
-# Opção A — agentes self-hosted (nome típico Default):
+# 3) No ACR, as imagens ficam: <acr>.azurecr.io/docengine-api:<tag> e docengine-web:<tag>
+# =============================================================================
+
+variables:
+  ACR_SERVICE_CONNECTION: ""
+  # URL da API que o browser usará (CORS + chamadas axios). Obrigatório para build web em CI.
+  VITE_API_URL: "https://CHANGE-ME.azurecontainerapps.io"
+
+# Opção A — agente self-hosted com Docker:
 pool:
   name: Default
-#
-# Opção B — quando a org autorizar agentes Microsoft-hosted, troca o bloco pool por:
+# Opção B — Microsoft-hosted (requer pool "Azure Pipelines" autorizado):
 # pool:
 #   vmImage: ubuntu-latest
-#
-# Autorização hosted: https://aka.ms/yamlauthz
 
 trigger:
   - main
 
 jobs:
-  - job: Build
-    displayName: Docker Compose
+  - job: CI
+    displayName: Validar Compose e imagens
     steps:
       - checkout: self
+        fetchDepth: 1
 
       - script: docker compose version
-        displayName: Compose version
+        displayName: Docker Compose
 
       - script: docker compose -f compose.yaml config
-        displayName: Validate compose.yaml
+        displayName: Validar compose.yaml
 
       - script: docker compose -f compose.yaml build
-        displayName: Build api and web
+        displayName: Build api e web (validação CI)
 
       - script: |
           set -e
@@ -39,4 +51,32 @@ jobs:
           export POSTGRES_USER=p POSTGRES_PASSWORD=p POSTGRES_DB=docengine
           export JWT_SECRET_KEY=01234567890123456789012345678901
           docker compose -f compose.stack.yaml config -q
-        displayName: Validar compose.stack.yaml (Swarm/Traefik)
+        displayName: Validar compose.stack.yaml
+
+      # --- Push Azure Container Registry (opcional) ---
+      - task: Docker@2
+        displayName: Build e push docengine-api → ACR
+        condition: and(succeeded(), ne(variables['ACR_SERVICE_CONNECTION'], ''))
+        inputs:
+          command: buildAndPush
+          repository: docengine-api
+          dockerfile: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API/Dockerfile"
+          buildContext: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API"
+          containerRegistry: "$(ACR_SERVICE_CONNECTION)"
+          tags: |
+            $(Build.BuildId)
+            latest
+
+      - task: Docker@2
+        displayName: Build e push docengine-web → ACR
+        condition: and(succeeded(), ne(variables['ACR_SERVICE_CONNECTION'], ''))
+        inputs:
+          command: buildAndPush
+          repository: docengine-web
+          dockerfile: "$(Build.SourcesDirectory)/frontend/Dockerfile"
+          buildContext: "$(Build.SourcesDirectory)/frontend"
+          arguments: "--build-arg VITE_API_URL=$(VITE_API_URL)"
+          containerRegistry: "$(ACR_SERVICE_CONNECTION)"
+          tags: |
+            $(Build.BuildId)
+            latest
