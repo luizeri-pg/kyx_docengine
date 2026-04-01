@@ -1,0 +1,21 @@
+# Definição de pipeline Azure DevOps (schema correto para este ficheiro).
+# NÃO definas docker-compose.yml / compose.yaml como "YAML do pipeline" nas definições do projeto —
+# isso faz o Azure validar o Compose como pipeline e gera "Unexpected value 'version' / 'services'".
+#
+# Em Pipelines → criar/editar → apontar para: azure-pipelines.yml
+#
+trigger:
+  - main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - script: docker compose version
+    displayName: Docker Compose
+
+  - script: docker compose -f compose.yaml config
+    displayName: Validar compose.yaml
+
+  - script: docker compose -f compose.yaml build
+    displayName: Build imagens (api + web)

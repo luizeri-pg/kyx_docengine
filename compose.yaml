@@ -1,6 +1,5 @@
-# Compose Specification (chave `version` mantém compatibilidade com linters / Azure DevOps DockerCompose).
+# Compose Specification (ficheiro canónico). Comandos: docker compose build | up (procura compose.yaml na pasta).
 # yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
-version: "3.8"
 
 services:
   postgres:
