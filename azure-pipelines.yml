@@ -1,82 +1,223 @@
-# =============================================================================
-# Azure DevOps — ficheiro: /azure-pipelines.yml
+# DocEngine — build/push + deploy Swarm (padrão NotifyHub, 1 API + web).
+# Variable groups: docengine_dev, docengine_hmg, docengine_prd
+#   Obrigatórios por ambiente: POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, JWT_SECRET_KEY
+#   Opcionais (override API): ConnectionStrings__DefaultConnection, Jwt__*, Cors__AllowedOrigins__*, etc.
+# Pools server28 / server31 e registry: ajusta ao teu ADO.
 #
-# 1) Pool: mantém "Default" (self-hosted) ou troca por vmImage: ubuntu-latest (hosted).
-# 2) Push para ACR (Azure Container Registry):
-#    - Project settings → Service connections → New → Docker Registry → Azure Container Registry
-#    - Cria uma ligação (ex.: acr-docengine)
-#    - Pipeline → Edit → Variables → New:
-#        ACR_SERVICE_CONNECTION = nome exato da service connection (ex.: acr-docengine)
-#        VITE_API_URL = URL pública da API (ex.: https://api.teudominio.com) — usada no build do front
-#    - Se ACR_SERVICE_CONNECTION ficar vazio, os passos Docker@2 são ignorados (só validação + build local).
-#
-# 3) No ACR, as imagens ficam: <acr>.azurecr.io/docengine-api:<tag> e docengine-web:<tag>
-# =============================================================================
+trigger:
+  branches:
+    include:
+      - main
+      - dev
 
 variables:
-  ACR_SERVICE_CONNECTION: ""
-  # URL da API que o browser usará (CORS + chamadas axios). Obrigatório para build web em CI.
-  VITE_API_URL: "https://CHANGE-ME.azurecontainerapps.io"
+  containerRegistry: registry.kubernetes.partner1.com.br
+  dockerRegistryServiceConnection: docker.partner
+  imageRepositoryApi: docengine-api
+  imageRepositoryWeb: docengine-web
+  imageTag: $(Build.BuildId)
+  stackNameDev: docengine-dev
+  stackNameHmg: docengine-hmg
+  stackNamePrd: docengine-prd
+  apiHostDev: dev-api-docengine.partner1.com.br
+  webHostDev: dev-docengine.partner1.com.br
+  apiHostHmg: hmg-api-docengine.partner1.com.br
+  webHostHmg: hmg-docengine.partner1.com.br
+  apiHostPrd: api-docengine.partner1.com.br
+  webHostPrd: docengine.partner1.com.br
 
-# Opção A — agente self-hosted com Docker:
-pool:
-  name: Default
-# Opção B — Microsoft-hosted (requer pool "Azure Pipelines" autorizado):
-# pool:
-#   vmImage: ubuntu-latest
+stages:
+  - stage: Build
+    displayName: Build and Push
+    jobs:
+      - job: DockerBuildPush
+        displayName: Build and push images
+        pool:
+          name: server28
+        steps:
+          - checkout: self
+            fetchDepth: 0
 
-trigger:
-  - main
+          - script: |
+              set -e
+              case "$(Build.SourceBranchName)" in
+                dev) V="https://$(apiHostDev)" ;;
+                main) V="https://$(apiHostPrd)" ;;
+                *) V="https://$(apiHostPrd)" ;;
+              esac
+              echo "##vso[task.setvariable variable=VITE_API_URL_BUILD]$V"
+            displayName: VITE_API_URL conforme branch (dev → API dev; main → API prd)
 
-jobs:
-  - job: CI
-    displayName: Validar Compose e imagens
-    steps:
-      - checkout: self
-        fetchDepth: 1
+          - task: Docker@2
+            displayName: Build & Push frontend
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepositoryWeb)
+              command: buildAndPush
+              Dockerfile: frontend/Dockerfile
+              buildContext: frontend
+              arguments: "--build-arg VITE_API_URL=$(VITE_API_URL_BUILD)"
+              tags: |
+                $(imageTag)
+                latest
 
-      - script: docker compose version
-        displayName: Docker Compose
+          - task: Docker@2
+            displayName: Build & Push API (DocEngine)
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepositoryApi)
+              command: buildAndPush
+              Dockerfile: backend/KYX.DocEngine.API/Dockerfile
+              buildContext: backend/KYX.DocEngine.API
+              tags: |
+                $(imageTag)
+                latest
 
-      - script: docker compose -f compose.yaml config
-        displayName: Validar compose.yaml
+  - stage: Deploy
+    displayName: Deploy Dev
+    dependsOn: Build
+    variables:
+      - group: docengine_dev
+    jobs:
+      - job: SwarmDeploy
+        displayName: Deploy stack on Swarm manager (Dev)
+        pool:
+          name: server31
+        steps:
+          - checkout: self
+            fetchDepth: 1
 
-      - script: docker compose -f compose.yaml build
-        displayName: Build api e web (validação CI)
+          - script: |
+              set -e
+              chmod +x deploy/stack-deploy.sh
+              export REGISTRY="$(containerRegistry)"
+              export TAG="$(imageTag)"
+              export API_HOST="$(apiHostDev)"
+              export WEB_HOST="$(webHostDev)"
+              export STACK_NAME="$(stackNameDev)"
+              export IMAGE_REPOSITORY_API="$(imageRepositoryApi)"
+              export IMAGE_REPOSITORY_WEB="$(imageRepositoryWeb)"
+              ./deploy/stack-deploy.sh
+            displayName: Deploy stack (Dev)
+            env:
+              POSTGRES_USER: $(POSTGRES_USER)
+              POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+              POSTGRES_DB: $(POSTGRES_DB)
+              JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+              ConnectionStrings__DefaultConnection: $(ConnectionStrings__DefaultConnection)
+              ConnectionStrings__Redis: $(ConnectionStrings__Redis)
+              Jwt__SecretKey: $(Jwt__SecretKey)
+              Jwt__Issuer: $(Jwt__Issuer)
+              Jwt__Audience: $(Jwt__Audience)
+              Jwt__ExpirationMinutes: $(Jwt__ExpirationMinutes)
+              Cors__AllowedOrigins__0: $(Cors__AllowedOrigins__0)
+              Cors__AllowedOrigins__1: $(Cors__AllowedOrigins__1)
+              Cors__AllowedOrigins__2: $(Cors__AllowedOrigins__2)
+              Cors__AllowedOrigins__3: $(Cors__AllowedOrigins__3)
+              Cors__AllowedOrigins__4: $(Cors__AllowedOrigins__4)
+              Database__ApplyMigrationsOnStartup: $(Database__ApplyMigrationsOnStartup)
+              Hangfire__Storage: $(Hangfire__Storage)
+              Documents__AllowSyncPdfGeneration: $(Documents__AllowSyncPdfGeneration)
+              Auth__UseDatabaseForLogin: $(Auth__UseDatabaseForLogin)
 
-      - script: |
-          set -e
-          export REGISTRY=ci.local/docengine TAG=ci STACK_NAME=ci
-          export API_HOST=api.ci.local WEB_HOST=app.ci.local
-          export POSTGRES_USER=p POSTGRES_PASSWORD=p POSTGRES_DB=docengine
-          export JWT_SECRET_KEY=01234567890123456789012345678901
-          docker compose -f compose.stack.yaml config -q
-        displayName: Validar compose.stack.yaml
+  - stage: DeployHmg
+    displayName: Deploy HMG
+    dependsOn: Deploy
+    variables:
+      - group: docengine_hmg
+    jobs:
+      - deployment: SwarmDeployHmg
+        displayName: Deploy stack on Swarm manager (HMG)
+        pool:
+          name: server31
+        environment: hmg
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 1
 
-      # --- Push Azure Container Registry (opcional) ---
-      - task: Docker@2
-        displayName: Build e push docengine-api → ACR
-        condition: and(succeeded(), ne(variables['ACR_SERVICE_CONNECTION'], ''))
-        inputs:
-          command: buildAndPush
-          repository: docengine-api
-          dockerfile: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API/Dockerfile"
-          buildContext: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API"
-          containerRegistry: "$(ACR_SERVICE_CONNECTION)"
-          tags: |
-            $(Build.BuildId)
-            latest
+                - script: |
+                    set -e
+                    chmod +x deploy/stack-deploy.sh
+                    export REGISTRY="$(containerRegistry)"
+                    export TAG="$(imageTag)"
+                    export API_HOST="$(apiHostHmg)"
+                    export WEB_HOST="$(webHostHmg)"
+                    export STACK_NAME="$(stackNameHmg)"
+                    export IMAGE_REPOSITORY_API="$(imageRepositoryApi)"
+                    export IMAGE_REPOSITORY_WEB="$(imageRepositoryWeb)"
+                    ./deploy/stack-deploy.sh
+                  displayName: Deploy stack (HMG)
+                  env:
+                    POSTGRES_USER: $(POSTGRES_USER)
+                    POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+                    POSTGRES_DB: $(POSTGRES_DB)
+                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+                    ConnectionStrings__DefaultConnection: $(ConnectionStrings__DefaultConnection)
+                    ConnectionStrings__Redis: $(ConnectionStrings__Redis)
+                    Jwt__SecretKey: $(Jwt__SecretKey)
+                    Jwt__Issuer: $(Jwt__Issuer)
+                    Jwt__Audience: $(Jwt__Audience)
+                    Jwt__ExpirationMinutes: $(Jwt__ExpirationMinutes)
+                    Cors__AllowedOrigins__0: $(Cors__AllowedOrigins__0)
+                    Cors__AllowedOrigins__1: $(Cors__AllowedOrigins__1)
+                    Cors__AllowedOrigins__2: $(Cors__AllowedOrigins__2)
+                    Cors__AllowedOrigins__3: $(Cors__AllowedOrigins__3)
+                    Cors__AllowedOrigins__4: $(Cors__AllowedOrigins__4)
+                    Database__ApplyMigrationsOnStartup: $(Database__ApplyMigrationsOnStartup)
+                    Hangfire__Storage: $(Hangfire__Storage)
+                    Documents__AllowSyncPdfGeneration: $(Documents__AllowSyncPdfGeneration)
+                    Auth__UseDatabaseForLogin: $(Auth__UseDatabaseForLogin)
 
-      - task: Docker@2
-        displayName: Build e push docengine-web → ACR
-        condition: and(succeeded(), ne(variables['ACR_SERVICE_CONNECTION'], ''))
-        inputs:
-          command: buildAndPush
-          repository: docengine-web
-          dockerfile: "$(Build.SourcesDirectory)/frontend/Dockerfile"
-          buildContext: "$(Build.SourcesDirectory)/frontend"
-          arguments: "--build-arg VITE_API_URL=$(VITE_API_URL)"
-          containerRegistry: "$(ACR_SERVICE_CONNECTION)"
-          tags: |
-            $(Build.BuildId)
-            latest
+  - stage: DeployPrd
+    displayName: Deploy PRD
+    dependsOn: DeployHmg
+    variables:
+      - group: docengine_prd
+    jobs:
+      - deployment: SwarmDeployPrd
+        displayName: Deploy stack on Swarm manager (PRD)
+        pool:
+          name: server31
+        environment: prd
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 1
+
+                - script: |
+                    set -e
+                    chmod +x deploy/stack-deploy.sh
+                    export REGISTRY="$(containerRegistry)"
+                    export TAG="$(imageTag)"
+                    export API_HOST="$(apiHostPrd)"
+                    export WEB_HOST="$(webHostPrd)"
+                    export STACK_NAME="$(stackNamePrd)"
+                    export IMAGE_REPOSITORY_API="$(imageRepositoryApi)"
+                    export IMAGE_REPOSITORY_WEB="$(imageRepositoryWeb)"
+                    ./deploy/stack-deploy.sh
+                  displayName: Deploy stack (PRD)
+                  env:
+                    POSTGRES_USER: $(POSTGRES_USER)
+                    POSTGRES_PASSWORD: $(POSTGRES_PASSWORD)
+                    POSTGRES_DB: $(POSTGRES_DB)
+                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+                    ConnectionStrings__DefaultConnection: $(ConnectionStrings__DefaultConnection)
+                    ConnectionStrings__Redis: $(ConnectionStrings__Redis)
+                    Jwt__SecretKey: $(Jwt__SecretKey)
+                    Jwt__Issuer: $(Jwt__Issuer)
+                    Jwt__Audience: $(Jwt__Audience)
+                    Jwt__ExpirationMinutes: $(Jwt__ExpirationMinutes)
+                    Cors__AllowedOrigins__0: $(Cors__AllowedOrigins__0)
+                    Cors__AllowedOrigins__1: $(Cors__AllowedOrigins__1)
+                    Cors__AllowedOrigins__2: $(Cors__AllowedOrigins__2)
+                    Cors__AllowedOrigins__3: $(Cors__AllowedOrigins__3)
+                    Cors__AllowedOrigins__4: $(Cors__AllowedOrigins__4)
+                    Database__ApplyMigrationsOnStartup: $(Database__ApplyMigrationsOnStartup)
+                    Hangfire__Storage: $(Hangfire__Storage)
+                    Documents__AllowSyncPdfGeneration: $(Documents__AllowSyncPdfGeneration)
+                    Auth__UseDatabaseForLogin: $(Auth__UseDatabaseForLogin)
