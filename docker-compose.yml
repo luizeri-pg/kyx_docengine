@@ -1,3 +1,7 @@
+# Compose Specification (chave `version` mantém compatibilidade com linters / Azure DevOps DockerCompose).
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+version: "3.8"
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -5,7 +9,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: docengine
-    # Sem mapeamento para o host: evita conflito com Postgres local. Acesso: docker compose exec postgres psql ...
+    # Postgres só na rede interna (sem portas no host).
     volumes:
       - docengine_pg:/var/lib/postgresql/data
     healthcheck:
