@@ -5,7 +5,8 @@
 #  • O commit b7595cb NÃO tinha este ficheiro — atualiza o branch main no Repos (último main).
 #  • Pipeline "docengine" → Editar → ⋮ (More actions) → Triggers → YAML →
 #    "YAML file path" = /azure-pipelines.yml
-#    (NÃO use docker-compose.yml nem compose.yaml — isso é Docker Compose, não pipeline.)
+#    NÃO uses compose.yaml como pipeline. Não há docker-compose.yml na raiz (o ADO validava-o
+#    como pipeline e falhava). Stack Docker: ficheiro compose.yaml — comando: docker compose up
 # =============================================================================
 trigger:
   branches:
