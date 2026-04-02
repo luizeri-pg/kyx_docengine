@@ -1,13 +1,13 @@
 # DocEngine — build + push das imagens no registry (sem deploy Swarm aqui).
 #
-# Pool único: self-hosted (ex.: server28). Não usa Microsoft-hosted — muitas orgs não têm
-# o pool "Azure Pipelines" autorizado (aka.ms/yamlauthz).
+# Pool: self-hosted (ex.: server28). Publish da API em docker run com SDK Alpine (imagem mais
+# leve que debian bookworm) + restore/publish em dois containers + cache NuGet no Agent.TempDirectory.
+# Publish com -r linux-x64 para artefactos glibc compatíveis com aspnet:10.0 (Debian).
 #
-# Publish da API: docker run mcr.microsoft.com/dotnet/sdk:10.0 (GLIBC do host do agente
-# é antigo demais para o SDK instalado no SO; dentro da imagem oficial funciona).
+# Se ainda ocorrer 137: aumentar RAM / limite de memória do Docker no host ou autorizar pool
+# Microsoft-hosted (aka.ms/yamlauthz) para publicar noutro agente.
 #
-# VITE_API_URL: sobrescreve em Pipeline → Variables se precisar.
-# Service connection: dockerRegistryServiceConnection.
+# VITE_API_URL: Pipeline → Variables. Service connection: dockerRegistryServiceConnection.
 
 trigger:
   branches:
@@ -20,6 +20,8 @@ variables:
   imageRepositoryApi: docengine-api
   imageRepositoryWeb: docengine-web
   VITE_API_URL: "https://api-docengine.partner1.com.br"
+  # SDK Alpine (menor); override no pipeline se precisares da imagem Debian completa
+  dotNetSdkContainer: mcr.microsoft.com/dotnet/sdk:10.0-alpine
 
 jobs:
   - job: BuildPush
@@ -33,16 +35,34 @@ jobs:
       - script: |
           set -e
           SRC="$(Build.SourcesDirectory)"
+          NUGET_CACHE="$(Agent.TempDirectory)/docengine-nuget"
+          mkdir -p "$NUGET_CACHE"
+          IMG="$(dotNetSdkContainer)"
           docker run --rm \
             -v "$SRC:/src" \
+            -v "$NUGET_CACHE:/nuget" \
             -w /src/backend/KYX.DocEngine.API \
+            -e NUGET_PACKAGES=/nuget \
             -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
             -e DOTNET_NOLOGO=1 \
             -e NUGET_XMLDOC_MODE=skip \
             -e DOTNET_gcServer=0 \
-            mcr.microsoft.com/dotnet/sdk:10.0 \
-            bash -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel && dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
-        displayName: dotnet publish API (container SDK)
+            -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+            "$IMG" \
+            sh -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel'
+          docker run --rm \
+            -v "$SRC:/src" \
+            -v "$NUGET_CACHE:/nuget" \
+            -w /src/backend/KYX.DocEngine.API \
+            -e NUGET_PACKAGES=/nuget \
+            -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+            -e DOTNET_NOLOGO=1 \
+            -e NUGET_XMLDOC_MODE=skip \
+            -e DOTNET_gcServer=0 \
+            -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+            "$IMG" \
+            sh -c 'dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -r linux-x64 --self-contained false --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
+        displayName: dotnet publish API (SDK Alpine, 2x docker run)
 
       - task: Docker@2
         displayName: Build & Push frontend
