@@ -3,8 +3,8 @@
 # Se o passo SDK falhar com 137, mover o bloco "dotnet publish API" para antes do Build & Push frontend.
 # Deploy (server31): docker stack deploy com deploy/docker-stack.yml
 #
-# Secrets no pipeline (ou Variable Group): ACR_USERNAME, ACR_PASSWORD, POSTGRES_USER,
-# POSTGRES_PASSWORD, POSTGRES_DB, JWT_SECRET_KEY
+# Secrets (por ambiente / Library): ACR_USERNAME, ACR_PASSWORD, JWT_SECRET_KEY,
+# CONNECTION_STRING_DEFAULT (Npgsql completa), CONNECTION_STRING_REDIS (ex.: host:6379)
 #
 # Ambientes Azure DevOps: hmg, prd (como no NotifyHub).
 
@@ -116,14 +116,11 @@ stages:
               set -e
               export REGISTRY=$(containerRegistry)
               export TAG=$(imageTag)
-              export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
-              export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
               export API_HOST=$(apiHostDev)
               export WEB_HOST=$(webHostDev)
               export STACK_NAME=$(stackNameDev)
-              export POSTGRES_USER="$(POSTGRES_USER)"
-              export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
-              export POSTGRES_DB="$(POSTGRES_DB)"
+              export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
+              export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
               export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
               docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
               docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
@@ -149,14 +146,11 @@ stages:
                     set -e
                     export REGISTRY=$(containerRegistry)
                     export TAG=$(imageTag)
-                    export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
-                    export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
                     export API_HOST=$(apiHostHmg)
                     export WEB_HOST=$(webHostHmg)
                     export STACK_NAME=$(stackNameHmg)
-                    export POSTGRES_USER="$(POSTGRES_USER)"
-                    export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
-                    export POSTGRES_DB="$(POSTGRES_DB)"
+                    export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
+                    export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
@@ -182,14 +176,11 @@ stages:
                     set -e
                     export REGISTRY=$(containerRegistry)
                     export TAG=$(imageTag)
-                    export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
-                    export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
                     export API_HOST=$(apiHostPrd)
                     export WEB_HOST=$(webHostPrd)
                     export STACK_NAME=$(stackNamePrd)
-                    export POSTGRES_USER="$(POSTGRES_USER)"
-                    export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
-                    export POSTGRES_DB="$(POSTGRES_DB)"
+                    export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
+                    export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}

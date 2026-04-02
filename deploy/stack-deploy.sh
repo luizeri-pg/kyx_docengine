@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 # Gera deploy/docker-stack.env.yml a partir de variáveis de ambiente e faz docker stack deploy.
-# Uso: na raiz do repo, com REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST, POSTGRES_*, JWT_SECRET_KEY,
-#      IMAGE_REPOSITORY_API, IMAGE_REPOSITORY_WEB exportados (e opcionais ConnectionStrings__*, Jwt__*, etc.)
+# Obrigatório: REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST, CONNECTION_STRING_DEFAULT,
+#             CONNECTION_STRING_REDIS, JWT_SECRET_KEY
+# Opcional: chaves em KEYS abaixo (Jwt__Issuer, Cors__*, etc.)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 : "${REGISTRY:?}" "${TAG:?}" "${STACK_NAME:?}" "${API_HOST:?}" "${WEB_HOST:?}"
-: "${POSTGRES_USER:?}" "${POSTGRES_PASSWORD:?}" "${POSTGRES_DB:?}" "${JWT_SECRET_KEY:?}"
-export IMAGE_REPOSITORY_API="${IMAGE_REPOSITORY_API:-docengine-api}"
-export IMAGE_REPOSITORY_WEB="${IMAGE_REPOSITORY_WEB:-docengine-web}"
+: "${CONNECTION_STRING_DEFAULT:?}" "${CONNECTION_STRING_REDIS:?}" "${JWT_SECRET_KEY:?}"
 
 OVERRIDE_FILE="$ROOT/deploy/docker-stack.env.yml"
 : > "$OVERRIDE_FILE"
