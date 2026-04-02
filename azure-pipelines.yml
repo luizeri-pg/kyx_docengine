@@ -73,7 +73,7 @@ stages:
                 -e DOTNET_gcServer=0 \
                 -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
                 "$IMG" \
-                sh -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel'
+                sh -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel -r linux-musl-x64'
               docker run --rm \
                 -v "$SRC:/src" \
                 -v "$NUGET_CACHE:/nuget" \

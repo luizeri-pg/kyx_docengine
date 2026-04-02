@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0-alpine AS build
 WORKDIR /src
 
 COPY KYX.DocEngine.API.csproj .
-RUN dotnet restore "KYX.DocEngine.API.csproj"
+RUN dotnet restore "KYX.DocEngine.API.csproj" -r linux-musl-x64
 
 COPY . .
 RUN dotnet publish "KYX.DocEngine.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
