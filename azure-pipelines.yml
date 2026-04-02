@@ -2,7 +2,7 @@
 #
 # VITE_API_URL: default no YAML abaixo; sobrescreve em Pipeline → Variables se a API tiver outro host.
 # Service connection Docker: dockerRegistryServiceConnection (ex.: docker.partner).
-# Pool build: server28 (NotifyHub). Aviso GLIBC/Node20 no agente: upgrade do SO do agente quando possível.
+# Pool build: server28 (NotifyHub). Se Docker build da API falhar com exit 137 / CoreCLR: aumentar RAM/swap no host ou limite de memória do Docker.
 #
 trigger:
   branches:
