@@ -1,11 +1,14 @@
-# DocEngine — apenas build + push das imagens no registry (sem deploy Swarm aqui).
+# DocEngine — build + push das imagens no registry (sem deploy Swarm aqui).
 #
-# VITE_API_URL: default no YAML abaixo; sobrescreve em Pipeline → Variables se a API tiver outro host.
-# Service connection Docker: dockerRegistryServiceConnection (ex.: docker.partner).
-# API: dotnet restore/publish dentro de docker run (sdk:10.0) — o agente tem GLIBC antiga e não corre o SDK no host;
-#      em seguida Docker@2 com Dockerfile.publish (só runtime + artefactos).
-# Pool: server28 (NotifyHub).
+# VITE_API_URL: default no YAML; sobrescreve em Pipeline → Variables se precisar.
+# Service connection Docker: dockerRegistryServiceConnection.
 #
+# API: dotnet publish em ubuntu-latest (RAM/GLIBC ok). O self-hosted server28 não
+# aguenta o SDK no Docker (137 / CoreCLR). O artefacto `api-publish` é baixado
+# no server28; Docker@2 usa só Dockerfile.publish (runtime + pasta publish/).
+#
+# Requisito: pipelines com agente Microsoft-hosted permitidos no projeto/org.
+
 trigger:
   branches:
     include:
@@ -16,17 +19,53 @@ variables:
   dockerRegistryServiceConnection: docker.partner
   imageRepositoryApi: docengine-api
   imageRepositoryWeb: docengine-web
-  # URL da API no bundle do front (ajusta ou define a mesma variável no pipeline ADO)
   VITE_API_URL: "https://api-docengine.partner1.com.br"
 
 jobs:
+  - job: PublishApi
+    displayName: Publish API (Microsoft-hosted)
+    pool:
+      vmImage: ubuntu-latest
+    steps:
+      - checkout: self
+        fetchDepth: 1
+
+      - task: UseDotNet@2
+        displayName: Instalar .NET 10 SDK
+        inputs:
+          packageType: sdk
+          version: 10.0.x
+
+      - script: |
+          set -e
+          export NUGET_XMLDOC_MODE=skip DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1
+          cd backend/KYX.DocEngine.API
+          dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel
+          dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish --no-restore -v minimal \
+            /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false
+        displayName: dotnet publish → backend/KYX.DocEngine.API/publish
+
+      - task: PublishPipelineArtifact@1
+        displayName: Publicar artefacto api-publish
+        inputs:
+          targetPath: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API/publish"
+          artifactName: api-publish
+
   - job: BuildPush
-    displayName: Build e push API + Web
+    displayName: Build e push imagens (self-hosted)
+    dependsOn: PublishApi
     pool:
       name: server28
     steps:
       - checkout: self
         fetchDepth: 1
+
+      - task: DownloadPipelineArtifact@2
+        displayName: Baixar saída publish da API
+        inputs:
+          buildType: current
+          artifactName: api-publish
+          targetPath: "$(Build.SourcesDirectory)/backend/KYX.DocEngine.API/publish"
 
       - task: Docker@2
         displayName: Build & Push frontend
@@ -40,20 +79,6 @@ jobs:
           tags: |
             $(Build.BuildId)
             latest
-
-      - script: |
-          set -e
-          SRC="$(Build.SourcesDirectory)"
-          docker run --rm \
-            -v "$SRC:/src" \
-            -w /src/backend/KYX.DocEngine.API \
-            -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
-            -e DOTNET_NOLOGO=1 \
-            -e NUGET_XMLDOC_MODE=skip \
-            -e DOTNET_gcServer=0 \
-            mcr.microsoft.com/dotnet/sdk:10.0 \
-            bash -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel && dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
-        displayName: dotnet publish API (container SDK — GLIBC do host incompatível)
 
       - task: Docker@2
         displayName: Build & Push API (imagem runtime + Chromium)
