@@ -3,11 +3,9 @@
 # VITE_API_URL: default no YAML; sobrescreve em Pipeline → Variables se precisar.
 # Service connection Docker: dockerRegistryServiceConnection.
 #
-# API: dotnet publish em ubuntu-latest (RAM/GLIBC ok). O self-hosted server28 não
-# aguenta o SDK no Docker (137 / CoreCLR). O artefacto `api-publish` é baixado
-# no server28; Docker@2 usa só Dockerfile.publish (runtime + pasta publish/).
-#
-# Requisito: pipelines com agente Microsoft-hosted permitidos no projeto/org.
+# API: dotnet publish em ubuntu-latest; artefacto `api-publish` no self-hosted (server28)
+# para build/push das imagens (SDK .NET 10 no agente antigo falha por GLIBC / ambiente).
+# Requisito: agentes Microsoft-hosted permitidos no projeto/org.
 
 trigger:
   branches:

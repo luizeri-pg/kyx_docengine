@@ -267,7 +267,7 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
 
 app.MapControllers();
 
-// Em Docker use ASPNETCORE_URLS=http://+:3000 (localhost dentro do container não recebe tráfego do host).
+// Em Docker/Swarm use ASPNETCORE_URLS=http://+:8080 (padrão stack; compose local pode mapear 3000:8080).
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
 {
     var port = builder.Configuration.GetValue<int>("Port", 3000);

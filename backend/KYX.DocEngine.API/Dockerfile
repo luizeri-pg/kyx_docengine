@@ -21,7 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 # Pacote `chromium` no Ubuntu expõe normalmente `chromium-browser` (snap wrapper em imagens recentes).
 ENV CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV ASPNETCORE_URLS=http://+:3000
-EXPOSE 3000
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "KYX.DocEngine.API.dll"]

@@ -1,8 +1,8 @@
-# Docker Swarm + Traefik (padrão semelhante ao NotifyHub).
-# Pré-requisitos: rede externa `traefik_public`, imagens no registry, ficheiro .env (ver env.stack.example).
+# Docker Swarm + Traefik — alinhado ao padrão NotifyHub (labels, sslheader, porta 8080, rotas legacy).
+# Pré-requisitos: rede externa `traefik_public`, imagens no registry, `.env` (ver env.stack.example).
 # Deploy: docker stack deploy -c compose.stack.yaml docengine
 #
-# A imagem web deve ser construída com VITE_API_URL=https://<API_HOST> (API e SPA em hosts distintos + CORS).
+# A imagem web deve ser construída com VITE_API_URL=https://<host da API> (CORS).
 #
 version: "3.9"
 
@@ -48,7 +48,7 @@ services:
     image: ${REGISTRY}/docengine-api:${TAG}
     environment:
       ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:3000
+      ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}"
       ConnectionStrings__Redis: redis:6379
       Hangfire__Storage: Redis
@@ -64,21 +64,32 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=traefik_public"
         - "traefik.mode=swarm"
-        - "traefik.http.middlewares.docengine-sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
-        - "traefik.http.routers.docengine-api-${STACK_NAME}.rule=Host(`${API_HOST}`)"
+        - "traefik.docker.network=traefik_public"
+        # Rota principal: API_PUBLIC_HOST dedicado; senão API_HOST (igual NotifyHub api-public)
+        - "traefik.http.routers.docengine-api-${STACK_NAME}.rule=Host(`${API_PUBLIC_HOST:-${API_HOST}}`)"
         - "traefik.http.routers.docengine-api-${STACK_NAME}.entrypoints=websecure"
         - "traefik.http.routers.docengine-api-${STACK_NAME}.tls=true"
-        - "traefik.http.routers.docengine-api-${STACK_NAME}.middlewares=docengine-sslheader"
-        - "traefik.http.services.docengine-api-${STACK_NAME}.loadbalancer.server.port=3000"
-        # Hangfire (mesmo host da API; prioridade maior que a rota geral)
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.rule=Host(`${API_HOST}`) && PathPrefix(`/hangfire`)"
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.entrypoints=websecure"
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.tls=true"
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.middlewares=docengine-sslheader"
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.service=docengine-api-${STACK_NAME}"
-        - "traefik.http.routers.docengine-hangfire-${STACK_NAME}.priority=20"
+        - "traefik.http.services.docengine-api-${STACK_NAME}.loadbalancer.server.port=8080"
+        - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+        # Legacy no host antigo (até DNS dedicado) — mesma ideia NotifyHub
+        - "traefik.http.routers.docengine-api-legacy-health-${STACK_NAME}.rule=Host(`${API_HOST}`) && Path(`/health`)"
+        - "traefik.http.routers.docengine-api-legacy-health-${STACK_NAME}.entrypoints=websecure"
+        - "traefik.http.routers.docengine-api-legacy-health-${STACK_NAME}.tls=true"
+        - "traefik.http.routers.docengine-api-legacy-health-${STACK_NAME}.service=docengine-api-${STACK_NAME}"
+        - "traefik.http.routers.docengine-api-legacy-health-${STACK_NAME}.priority=10"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.rule=Host(`${API_HOST}`) && PathPrefix(`/swagger`)"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.entrypoints=websecure"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.tls=true"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.service=docengine-api-${STACK_NAME}"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.middlewares=sslheader"
+        - "traefik.http.routers.docengine-api-legacy-swagger-${STACK_NAME}.priority=10"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.rule=Host(`${API_HOST}`) && PathPrefix(`/hangfire`)"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.entrypoints=websecure"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.tls=true"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.service=docengine-api-${STACK_NAME}"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.middlewares=sslheader"
+        - "traefik.http.routers.docengine-api-legacy-hangfire-${STACK_NAME}.priority=20"
 
   web:
     image: ${REGISTRY}/docengine-web:${TAG}
@@ -91,14 +102,13 @@ services:
         condition: on-failure
       labels:
         - "traefik.enable=true"
-        - "traefik.docker.network=traefik_public"
         - "traefik.mode=swarm"
-        - "traefik.http.middlewares.docengine-sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+        - "traefik.docker.network=traefik_public"
         - "traefik.http.routers.docengine-web-${STACK_NAME}.rule=Host(`${WEB_HOST}`)"
         - "traefik.http.routers.docengine-web-${STACK_NAME}.entrypoints=websecure"
         - "traefik.http.routers.docengine-web-${STACK_NAME}.tls=true"
-        - "traefik.http.routers.docengine-web-${STACK_NAME}.middlewares=docengine-sslheader"
         - "traefik.http.services.docengine-web-${STACK_NAME}.loadbalancer.server.port=80"
+        - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
 
 networks:
   docengine-net:
