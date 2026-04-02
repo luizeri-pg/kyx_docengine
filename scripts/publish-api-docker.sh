@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Replica o publish da API como no CI: SDK Alpine (mais leve), 2x docker run, -r linux-x64
+# Replica o publish da API como no CI: SDK Alpine, 2x docker run, -r linux-musl-x64 (runtime Alpine)
 # (compatível com imagem aspnet Debian). Uso na raiz: ./scripts/publish-api-docker.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,6 +23,6 @@ run() {
 }
 
 run 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel'
-run 'dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -r linux-x64 --self-contained false --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
+run 'dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -r linux-musl-x64 --self-contained false --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
 
 echo ">>> OK: $ROOT/backend/KYX.DocEngine.API/publish"

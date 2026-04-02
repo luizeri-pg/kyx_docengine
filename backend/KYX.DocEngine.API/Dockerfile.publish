@@ -1,15 +1,22 @@
-# Só runtime — o CI faz dotnet publish no agente e copia ./publish (evita SDK no Docker = menos OOM).
-# Uso local completo: Dockerfile (multi-stage).
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+# Só runtime — CI publica no host/agente e copia ./publish (menos RAM que SDK no mesmo build).
+# Runtime alinhado ao Dockerfile multi-stage (NotifyHub + Chromium Alpine).
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 WORKDIR /app
-RUN apt-get update && apt-get install -y --no-install-recommends \
+
+RUN apk add --no-cache \
     chromium \
     fontconfig \
-    fonts-liberation \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-ENV CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV ASPNETCORE_URLS=http://+:8080
-EXPOSE 8080
+    freetype \
+    ttf-freefont \
+    ca-certificates
+
+ENV ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production
+ENV CHROME_EXECUTABLE_PATH=/usr/bin/chromium
+ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+ENV DOTNET_USE_POLLING_FILE_WATCHER=1
+
 COPY publish/ .
+
+EXPOSE 8080
 ENTRYPOINT ["dotnet", "KYX.DocEngine.API.dll"]
