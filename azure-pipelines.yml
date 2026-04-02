@@ -2,7 +2,8 @@
 #
 # VITE_API_URL: default no YAML abaixo; sobrescreve em Pipeline → Variables se a API tiver outro host.
 # Service connection Docker: dockerRegistryServiceConnection (ex.: docker.partner).
-# API: dotnet publish no agente (UseDotNet) + Docker só com Dockerfile.publish (sem SDK no container — evita OOM 137).
+# API: dotnet restore/publish dentro de docker run (sdk:10.0) — o agente tem GLIBC antiga e não corre o SDK no host;
+#      em seguida Docker@2 com Dockerfile.publish (só runtime + artefactos).
 # Pool: server28 (NotifyHub).
 #
 trigger:
@@ -27,12 +28,6 @@ jobs:
       - checkout: self
         fetchDepth: 1
 
-      - task: UseDotNet@2
-        displayName: Instalar .NET 10 SDK (publish da API no agente)
-        inputs:
-          packageType: sdk
-          version: 10.0.x
-
       - task: Docker@2
         displayName: Build & Push frontend
         inputs:
@@ -48,11 +43,17 @@ jobs:
 
       - script: |
           set -e
-          export NUGET_XMLDOC_MODE=skip DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1
-          cd backend/KYX.DocEngine.API
-          dotnet restore KYX.DocEngine.API.csproj --verbosity minimal /m:1
-          dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -m:1 --no-restore
-        displayName: dotnet publish API (fora do Docker)
+          SRC="$(Build.SourcesDirectory)"
+          docker run --rm \
+            -v "$SRC:/src" \
+            -w /src/backend/KYX.DocEngine.API \
+            -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+            -e DOTNET_NOLOGO=1 \
+            -e NUGET_XMLDOC_MODE=skip \
+            -e DOTNET_gcServer=0 \
+            mcr.microsoft.com/dotnet/sdk:10.0 \
+            bash -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel && dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false'
+        displayName: dotnet publish API (container SDK — GLIBC do host incompatível)
 
       - task: Docker@2
         displayName: Build & Push API (imagem runtime + Chromium)
