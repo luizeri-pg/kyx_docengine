@@ -1,9 +1,8 @@
 # DocEngine — apenas build + push das imagens no registry (sem deploy Swarm aqui).
 #
-# Antes de correr:
-#   1) Pipeline → Edit → Variables → cria VITE_API_URL (ex.: https://api-docengine.teudominio.com)
-#   2) Service connection Docker com o mesmo nome que dockerRegistryServiceConnection (ex.: docker.partner)
-#   3) Agent pool: igual NotifyHub — build em server28; deploy Swarm (se voltares a acrescentar) em server31.
+# VITE_API_URL: default no YAML abaixo; sobrescreve em Pipeline → Variables se a API tiver outro host.
+# Service connection Docker: dockerRegistryServiceConnection (ex.: docker.partner).
+# Pool build: server28 (NotifyHub). Aviso GLIBC/Node20 no agente: upgrade do SO do agente quando possível.
 #
 trigger:
   branches:
@@ -15,8 +14,8 @@ variables:
   dockerRegistryServiceConnection: docker.partner
   imageRepositoryApi: docengine-api
   imageRepositoryWeb: docengine-web
-  # Sobrescreve em Pipeline → Variables (obrigatório)
-  VITE_API_URL: ""
+  # URL da API no bundle do front (ajusta ou define a mesma variável no pipeline ADO)
+  VITE_API_URL: "https://api-docengine.partner1.com.br"
 
 jobs:
   - job: BuildPush
@@ -26,14 +25,6 @@ jobs:
     steps:
       - checkout: self
         fetchDepth: 1
-
-      - script: |
-          set -e
-          if [ -z "$(VITE_API_URL)" ] || [ "$(VITE_API_URL)" = "" ]; then
-            echo "##[error]Define a variável VITE_API_URL no pipeline (URL HTTPS da API para o front)."
-            exit 1
-          fi
-        displayName: Validar VITE_API_URL
 
       - task: Docker@2
         displayName: Build & Push frontend
