@@ -1,13 +1,12 @@
-# DocEngine — build + push das imagens no registry (sem deploy Swarm aqui).
+# DocEngine — alinhado à estrutura NotifyHub (stages Build + Deploy Dev/HMG/PRD).
+# Build (server28): mesma ordem NotifyHub (front → backend); entre os dois vai o publish .NET em Docker.
+# Se o passo SDK falhar com 137, mover o bloco "dotnet publish API" para antes do Build & Push frontend.
+# Deploy (server31): docker stack deploy com deploy/docker-stack.yml
 #
-# Pool: self-hosted (ex.: server28). Publish da API em docker run com SDK Alpine (imagem mais
-# leve que debian bookworm) + restore/publish em dois containers + cache NuGet no Agent.TempDirectory.
-# Publish com -r linux-x64 para artefactos glibc compatíveis com aspnet:10.0 (Debian).
+# Secrets no pipeline (ou Variable Group): ACR_USERNAME, ACR_PASSWORD, POSTGRES_USER,
+# POSTGRES_PASSWORD, POSTGRES_DB, JWT_SECRET_KEY
 #
-# Se ainda ocorrer 137: aumentar RAM / limite de memória do Docker no host ou autorizar pool
-# Microsoft-hosted (aka.ms/yamlauthz) para publicar noutro agente.
-#
-# VITE_API_URL: Pipeline → Variables. Service connection: dockerRegistryServiceConnection.
+# Ambientes Azure DevOps: hmg, prd (como no NotifyHub).
 
 trigger:
   branches:
@@ -16,75 +15,182 @@ trigger:
       - dev
 
 variables:
+  containerRegistry: registry.kubernetes.partner1.com.br
   dockerRegistryServiceConnection: docker.partner
   imageRepositoryApi: docengine-api
   imageRepositoryWeb: docengine-web
-  VITE_API_URL: "https://api-docengine.partner1.com.br"
-  # SDK Alpine (menor); override no pipeline se precisares da imagem Debian completa
+  imageTag: $(Build.BuildId)
   dotNetSdkContainer: mcr.microsoft.com/dotnet/sdk:10.0-alpine
+  stackNameDev: docengine-dev
+  stackNameHmg: docengine-hmg
+  stackNamePrd: docengine-prd
+  apiHostDev: dev-api-docengine.partner1.com.br
+  webHostDev: dev-app-docengine.partner1.com.br
+  apiHostHmg: hmg-api-docengine.partner1.com.br
+  webHostHmg: hmg-app-docengine.partner1.com.br
+  apiHostPrd: api-docengine.partner1.com.br
+  webHostPrd: app-docengine.partner1.com.br
 
-jobs:
-  - job: BuildPush
-    displayName: Build e push API + Web
-    pool:
-      name: server28
-    steps:
-      - checkout: self
-        fetchDepth: 1
+stages:
+  - stage: Build
+    displayName: Build and Push
+    jobs:
+      - job: DockerBuildPush
+        displayName: Build and push images
+        pool:
+          name: server28
+        steps:
+          - checkout: self
+            fetchDepth: 0
 
-      - script: |
-          set -e
-          SRC="$(Build.SourcesDirectory)"
-          NUGET_CACHE="$(Agent.TempDirectory)/docengine-nuget"
-          mkdir -p "$NUGET_CACHE"
-          IMG="$(dotNetSdkContainer)"
-          docker run --rm \
-            -v "$SRC:/src" \
-            -v "$NUGET_CACHE:/nuget" \
-            -w /src/backend/KYX.DocEngine.API \
-            -e NUGET_PACKAGES=/nuget \
-            -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
-            -e DOTNET_NOLOGO=1 \
-            -e NUGET_XMLDOC_MODE=skip \
-            -e DOTNET_gcServer=0 \
-            -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
-            "$IMG" \
-            sh -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel'
-          docker run --rm \
-            -v "$SRC:/src" \
-            -v "$NUGET_CACHE:/nuget" \
-            -w /src/backend/KYX.DocEngine.API \
-            -e NUGET_PACKAGES=/nuget \
-            -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
-            -e DOTNET_NOLOGO=1 \
-            -e NUGET_XMLDOC_MODE=skip \
-            -e DOTNET_gcServer=0 \
-            -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
-            "$IMG" \
-            sh -c 'dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -r linux-x64 --self-contained false --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
-        displayName: dotnet publish API (SDK Alpine, 2x docker run)
+          - task: Docker@2
+            displayName: Build & Push frontend
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepositoryWeb)
+              command: buildAndPush
+              Dockerfile: frontend/Dockerfile
+              buildContext: frontend
+              arguments: "--build-arg VITE_API_URL=https://$(apiHostDev)"
+              tags: |
+                $(imageTag)
+                latest
 
-      - task: Docker@2
-        displayName: Build & Push frontend
-        inputs:
-          containerRegistry: $(dockerRegistryServiceConnection)
-          repository: $(imageRepositoryWeb)
-          command: buildAndPush
-          Dockerfile: frontend/Dockerfile
-          buildContext: frontend
-          arguments: "--build-arg VITE_API_URL=$(VITE_API_URL)"
-          tags: |
-            $(Build.BuildId)
-            latest
+          - script: |
+              set -e
+              SRC="$(Build.SourcesDirectory)"
+              NUGET_CACHE="$(Agent.TempDirectory)/docengine-nuget"
+              mkdir -p "$NUGET_CACHE"
+              IMG="$(dotNetSdkContainer)"
+              docker run --rm \
+                -v "$SRC:/src" \
+                -v "$NUGET_CACHE:/nuget" \
+                -w /src/backend/KYX.DocEngine.API \
+                -e NUGET_PACKAGES=/nuget \
+                -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+                -e DOTNET_NOLOGO=1 \
+                -e NUGET_XMLDOC_MODE=skip \
+                -e DOTNET_gcServer=0 \
+                -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+                "$IMG" \
+                sh -c 'dotnet restore KYX.DocEngine.API.csproj --verbosity minimal --disable-parallel'
+              docker run --rm \
+                -v "$SRC:/src" \
+                -v "$NUGET_CACHE:/nuget" \
+                -w /src/backend/KYX.DocEngine.API \
+                -e NUGET_PACKAGES=/nuget \
+                -e DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 \
+                -e DOTNET_NOLOGO=1 \
+                -e NUGET_XMLDOC_MODE=skip \
+                -e DOTNET_gcServer=0 \
+                -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+                "$IMG" \
+                sh -c 'dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -r linux-x64 --self-contained false --no-restore -v minimal /p:MaxCpuCount=1 /p:BuildInParallel=false /p:RunAnalyzers=false /p:UseSharedCompilation=false'
+            displayName: dotnet publish API (SDK Alpine, 2x docker run)
 
-      - task: Docker@2
-        displayName: Build & Push API (imagem runtime + Chromium)
-        inputs:
-          containerRegistry: $(dockerRegistryServiceConnection)
-          repository: $(imageRepositoryApi)
-          command: buildAndPush
-          Dockerfile: backend/KYX.DocEngine.API/Dockerfile.publish
-          buildContext: backend/KYX.DocEngine.API
-          tags: |
-            $(Build.BuildId)
-            latest
+          - task: Docker@2
+            displayName: Build & Push backend
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepositoryApi)
+              command: buildAndPush
+              Dockerfile: backend/KYX.DocEngine.API/Dockerfile.publish
+              buildContext: backend/KYX.DocEngine.API
+              tags: |
+                $(imageTag)
+                latest
+
+  - stage: Deploy
+    displayName: Deploy Dev
+    dependsOn: Build
+    jobs:
+      - job: SwarmDeploy
+        displayName: Deploy stack on Swarm manager (Dev)
+        pool:
+          name: server31
+        steps:
+          - checkout: self
+            fetchDepth: 1
+
+          - script: |
+              set -e
+              export REGISTRY=$(containerRegistry)
+              export TAG=$(imageTag)
+              export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
+              export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
+              export API_HOST=$(apiHostDev)
+              export WEB_HOST=$(webHostDev)
+              export STACK_NAME=$(stackNameDev)
+              export POSTGRES_USER="$(POSTGRES_USER)"
+              export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
+              export POSTGRES_DB="$(POSTGRES_DB)"
+              export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
+              docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
+              docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+            displayName: Deploy stack
+
+  - stage: DeployHmg
+    displayName: Deploy HMG
+    dependsOn: Deploy
+    jobs:
+      - deployment: SwarmDeployHmg
+        displayName: Deploy stack on Swarm manager (HMG)
+        pool:
+          name: server31
+        environment: hmg
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 1
+
+                - script: |
+                    set -e
+                    export REGISTRY=$(containerRegistry)
+                    export TAG=$(imageTag)
+                    export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
+                    export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
+                    export API_HOST=$(apiHostHmg)
+                    export WEB_HOST=$(webHostHmg)
+                    export STACK_NAME=$(stackNameHmg)
+                    export POSTGRES_USER="$(POSTGRES_USER)"
+                    export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
+                    export POSTGRES_DB="$(POSTGRES_DB)"
+                    export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
+                    docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
+                    docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+                  displayName: Deploy stack
+
+  - stage: DeployPrd
+    displayName: Deploy PRD
+    dependsOn: DeployHmg
+    jobs:
+      - deployment: SwarmDeployPrd
+        displayName: Deploy stack on Swarm manager (PRD)
+        pool:
+          name: server31
+        environment: prd
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  fetchDepth: 1
+
+                - script: |
+                    set -e
+                    export REGISTRY=$(containerRegistry)
+                    export TAG=$(imageTag)
+                    export IMAGE_REPOSITORY_API=$(imageRepositoryApi)
+                    export IMAGE_REPOSITORY_WEB=$(imageRepositoryWeb)
+                    export API_HOST=$(apiHostPrd)
+                    export WEB_HOST=$(webHostPrd)
+                    export STACK_NAME=$(stackNamePrd)
+                    export POSTGRES_USER="$(POSTGRES_USER)"
+                    export POSTGRES_PASSWORD="$(POSTGRES_PASSWORD)"
+                    export POSTGRES_DB="$(POSTGRES_DB)"
+                    export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
+                    docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
+                    docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+                  displayName: Deploy stack
