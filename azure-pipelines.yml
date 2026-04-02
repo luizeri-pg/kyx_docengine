@@ -2,7 +2,8 @@
 #
 # VITE_API_URL: default no YAML abaixo; sobrescreve em Pipeline → Variables se a API tiver outro host.
 # Service connection Docker: dockerRegistryServiceConnection (ex.: docker.partner).
-# Pool build: server28 (NotifyHub). Se Docker build da API falhar com exit 137 / CoreCLR: aumentar RAM/swap no host ou limite de memória do Docker.
+# API: dotnet publish no agente (UseDotNet) + Docker só com Dockerfile.publish (sem SDK no container — evita OOM 137).
+# Pool: server28 (NotifyHub).
 #
 trigger:
   branches:
@@ -26,6 +27,12 @@ jobs:
       - checkout: self
         fetchDepth: 1
 
+      - task: UseDotNet@2
+        displayName: Instalar .NET 10 SDK (publish da API no agente)
+        inputs:
+          packageType: sdk
+          version: 10.0.x
+
       - task: Docker@2
         displayName: Build & Push frontend
         inputs:
@@ -39,13 +46,21 @@ jobs:
             $(Build.BuildId)
             latest
 
+      - script: |
+          set -e
+          export NUGET_XMLDOC_MODE=skip DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 DOTNET_NOLOGO=1
+          cd backend/KYX.DocEngine.API
+          dotnet restore KYX.DocEngine.API.csproj --verbosity minimal /m:1
+          dotnet publish KYX.DocEngine.API.csproj -c Release -o ./publish -m:1 --no-restore
+        displayName: dotnet publish API (fora do Docker)
+
       - task: Docker@2
-        displayName: Build & Push API
+        displayName: Build & Push API (imagem runtime + Chromium)
         inputs:
           containerRegistry: $(dockerRegistryServiceConnection)
           repository: $(imageRepositoryApi)
           command: buildAndPush
-          Dockerfile: backend/KYX.DocEngine.API/Dockerfile
+          Dockerfile: backend/KYX.DocEngine.API/Dockerfile.publish
           buildContext: backend/KYX.DocEngine.API
           tags: |
             $(Build.BuildId)

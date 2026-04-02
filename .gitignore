@@ -11,6 +11,7 @@ out/
 # .NET
 bin/
 obj/
+backend/KYX.DocEngine.API/publish/
 *.dll
 *.pdb
 *.user

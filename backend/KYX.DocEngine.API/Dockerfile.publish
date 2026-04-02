@@ -1,0 +1,15 @@
+# Só runtime — o CI faz dotnet publish no agente e copia ./publish (evita SDK no Docker = menos OOM).
+# Uso local completo: Dockerfile (multi-stage).
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    fontconfig \
+    fonts-liberation \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+ENV CHROME_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV ASPNETCORE_URLS=http://+:3000
+EXPOSE 3000
+COPY publish/ .
+ENTRYPOINT ["dotnet", "KYX.DocEngine.API.dll"]
