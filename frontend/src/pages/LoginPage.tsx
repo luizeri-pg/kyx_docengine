@@ -69,11 +69,19 @@ export function LoginPage() {
         err.code === 'ECONNREFUSED' ||
         err.message === 'Network Error' ||
         (!err.response && err.request);
+      const status = err.response?.status;
+      const statusHint =
+        status != null
+          ? ` (HTTP ${status}${status >= 500 ? ' — falha no servidor; veja logs do contentor da API' : ''})`
+          : '';
       const errorMessage = isOffline
         ? `Não foi possível ligar à API${
             API_BASE_URL === '/api' ? ' (proxy /api → localhost:3000)' : ` em ${API_BASE_URL}`
           }. Inicie o backend: na pasta backend/KYX.DocEngine.API execute «dotnet run» (porta 3000 por defeito).`
-        : err.response?.data?.mensagem || err.message || 'Credenciais inválidas ou servidor indisponível';
+        : err.response?.data?.mensagem ||
+          (status != null
+            ? `Resposta inválida da API${statusHint}`
+            : err.message || 'Credenciais inválidas ou servidor indisponível');
       setError(errorMessage);
       console.error('Erro no login:', err);
     } finally {

@@ -42,23 +42,32 @@ public class RequestLoggingMiddleware
                 context.Request.Body.Position = 0;
         }
 
-        var originalBody = context.Response.Body;
-        await using var responseBuffer = new MemoryStream();
-        context.Response.Body = responseBuffer;
-
-        var responseBody = "";
-        try
+        // GET/HEAD: não substituir Response.Body — evita 500 opacos com proxy/Kestrel e não precisamos do corpo para auditoria.
+        var captureResponse = !HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method);
+        string responseBody;
+        if (captureResponse)
         {
-            await _next(context);
+            var originalBody = context.Response.Body;
+            await using var responseBuffer = new MemoryStream();
+            context.Response.Body = responseBuffer;
+            responseBody = "";
+            try
+            {
+                await _next(context);
+            }
+            finally
+            {
+                responseBuffer.Position = 0;
+                responseBody = await new StreamReader(responseBuffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true).ReadToEndAsync();
+                responseBuffer.Position = 0;
+                await responseBuffer.CopyToAsync(originalBody);
+                context.Response.Body = originalBody;
+            }
         }
-        finally
+        else
         {
-            // Sempre repor o stream de resposta (se _next falhar sem isto, o Kestrel devolve 500 sem corpo).
-            responseBuffer.Position = 0;
-            responseBody = await new StreamReader(responseBuffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true).ReadToEndAsync();
-            responseBuffer.Position = 0;
-            await responseBuffer.CopyToAsync(originalBody);
-            context.Response.Body = originalBody;
+            responseBody = "";
+            await _next(context);
         }
 
         stopwatch.Stop();
