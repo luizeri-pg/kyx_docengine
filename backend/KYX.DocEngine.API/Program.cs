@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Hangfire;
 using Hangfire.Dashboard;
@@ -260,12 +261,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
+
+// Endpoints (Map* em vez de UseHangfireDashboard evita conflitos com routing e 500 em GET /).
+app.MapGet("/", () => Results.Json(new Dictionary<string, string>
+{
+    ["service"] = "KYX DocEngine API",
+    ["health"] = "/health"
+}));
+
+app.MapControllers();
+
+app.MapHangfireDashboard("/hangfire", new DashboardOptions
 {
     Authorization = new[] { new HangfireAuthFilter() }
 });
-
-app.MapControllers();
 
 // Em Docker/Swarm use ASPNETCORE_URLS=http://+:8080 (padrão stack; compose local pode mapear 3000:8080).
 if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
