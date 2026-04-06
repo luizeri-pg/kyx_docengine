@@ -23,6 +23,37 @@ services:
       Jwt__SecretKey: "${JWT_SECRET_KEY}"
       # true em dev (pipeline exporta); hmg/prd: omitir SWAGGER_ENABLED → false
       Swagger__Enabled: "${SWAGGER_ENABLED:-false}"
+      # tb_usuario legado KYX/Notify (id_usuario, str_login, bloqueado, …). Sem isto, Production usa id/nome do appsettings.json → consulta falha → 401 «Serviço de autenticação indisponível».
+      # BD criada só pelas migrações DocEngine (colunas id, nome, …): remova este bloco ou use compose local.
+      Schema__Usuario__Id: id_usuario
+      Schema__Usuario__Nome: str_descricao
+      Schema__Usuario__Email: email
+      Schema__Usuario__Login: str_login
+      Schema__Usuario__Senha: str_senha
+      Schema__Usuario__PerfilId: ''
+      Schema__Usuario__Ativo: bloqueado
+      Schema__Usuario__AtivoInverted: "true"
+      Schema__Usuario__CriadoEm: dh_inclui
+      Schema__Usuario__AtualizadoEm: dh_inclui
+      Schema__Usuario__IdIntegerType: "true"
+      Schema__Usuario__UniqueEmailIndex: "false"
+      Schema__Perfil__Id: id_perfil
+      Schema__Perfil__Nome: str_descricao
+      Schema__Perfil__Descricao: ''
+      Schema__Perfil__CriadoEm: dh_inclui
+      Schema__Perfil__AtualizadoEm: dh_inclui
+      Schema__Perfil__IdIntegerType: "true"
+      Schema__LogRequisicao__Id: id
+      Schema__LogRequisicao__RequisicaoId: requisicao_id
+      Schema__LogRequisicao__UsuarioId: usuario_id
+      Schema__LogRequisicao__Canal: ''
+      Schema__LogRequisicao__CentroCusto: centro_custo
+      Schema__LogRequisicao__RequestPayload: request_payload
+      Schema__LogRequisicao__ResponsePayload: response_payload
+      Schema__LogRequisicao__StatusHttp: status_http
+      Schema__LogRequisicao__TempoRespostaMs: tempo_resposta_ms
+      Schema__LogRequisicao__Erro: erro
+      Schema__LogRequisicao__CriadoEm: criado_em
     deploy:
       replicas: 1
       restart_policy:
