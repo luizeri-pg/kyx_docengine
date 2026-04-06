@@ -1,8 +1,9 @@
 namespace KYX.DocEngine.API.Configuration;
 
 /// <summary>
-/// Nomes reais das colunas no PostgreSQL quando o schema legado difere do modelo Notify padrão.
-/// Ajuste em <c>appsettings.Local.json</c> conforme <c>\d tb_usuario</c> / <c>\d tb_log_requisicao</c>.
+/// Nomes das colunas em PostgreSQL quando a tabela não segue o modelo por defeito do <c>appsettings.json</c>.
+/// No arranque, <see cref="LegacyTbUsuarioSchemaProbe"/> consulta <c>information_schema</c>: se existir <c>str_login</c>
+/// em <c>tb_usuario</c>, aplica <c>appsettings.LegacyTbUsuario.json</c>. Casos raros: sobrescrever em <c>appsettings.Local.json</c>.
 /// </summary>
 public class SchemaTableOptions
 {

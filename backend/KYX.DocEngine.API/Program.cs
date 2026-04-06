@@ -23,6 +23,9 @@ var isDevelopment = builder.Environment.IsDevelopment();
 // Sobrescreve secrets/local (não versionar: appsettings.Local.json está no .gitignore)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
+// Schema tb_usuario/tb_perfil/tb_log: inspeciona colunas na BD e aplica appsettings.LegacyTbUsuario.json se for modelo KYX/Notify.
+LegacyTbUsuarioSchemaProbe.MergeIfDatabaseMatchesLegacyModel(builder.Configuration);
+
 // Swarm/produção: variáveis vazias substituem appsettings — sem isto o contentor reinicia sem mensagem clara.
 if (!builder.Environment.IsDevelopment())
 {
