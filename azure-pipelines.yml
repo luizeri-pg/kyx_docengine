@@ -97,7 +97,8 @@ stages:
               command: buildAndPush
               Dockerfile: frontend/Dockerfile
               buildContext: frontend
-              arguments: "--build-arg VITE_API_URL=https://$(apiHostDev)"
+              # Mesmo host da app + proxy nginx /api/ → API (sem CORS nem expor dev-api no browser).
+              arguments: "--build-arg VITE_API_URL=/api"
               tags: |
                 $(imageTag)
                 latest

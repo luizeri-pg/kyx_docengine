@@ -2,7 +2,7 @@
 # Pré-requisitos: rede externa `traefik_public`, imagens no registry, `.env` (ver env.stack.example).
 # Deploy: docker stack deploy -c compose.stack.yaml docengine
 #
-# A imagem web deve ser construída com VITE_API_URL=https://<host da API> (CORS).
+# Imagem web: VITE_API_URL=/api (proxy no nginx, mesmo host) ou URL absoluta da API (CORS).
 #
 version: "3.9"
 
