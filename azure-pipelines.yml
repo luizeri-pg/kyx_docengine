@@ -133,6 +133,7 @@ stages:
               export API_HOST=$(apiHostDev)
               export WEB_HOST=$(webHostDev)
               export STACK_NAME=$(stackNameDev)
+              export SWAGGER_ENABLED=true
               docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
               docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
               echo "--- Estado dos serviços (API = ${STACK_NAME}_api) ---"

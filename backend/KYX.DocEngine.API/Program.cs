@@ -268,7 +268,10 @@ else
         "Garanta o schema com «dotnet ef database update» ou scripts DBA, ou ative a opção em appsettings.");
 }
 
-if (app.Environment.IsDevelopment())
+// Swagger: só Development por defeito; em Docker (Production) use Swagger__Enabled=true (ex.: dev no Swarm).
+var enableSwagger = app.Environment.IsDevelopment()
+    || builder.Configuration.GetValue("Swagger:Enabled", false);
+if (enableSwagger)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
