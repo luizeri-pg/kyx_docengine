@@ -3,8 +3,10 @@
 # Se o passo SDK falhar com 137, isolar restore/publish ou aumentar RAM no agente.
 # Deploy (server31): docker stack deploy com deploy/docker-stack.yml
 #
-# Secrets (por ambiente / Library): ACR_USERNAME, ACR_PASSWORD, JWT_SECRET_KEY,
-# CONNECTION_STRING_DEFAULT (Npgsql completa)
+# Secrets (Library / grupo ligado ao pipeline):
+#   Npgsql: DOCENGINE_ConnectionStrings__DefaultConnection (recomendado) ou CONNECTION_STRING_DEFAULT
+#   JWT: DOCENGINE_Jwt__SecretKey (recomendado) ou JWT_SECRET_KEY
+#   ACR_USERNAME, ACR_PASSWORD
 #
 # Ambientes Azure DevOps: hmg, prd (como no NotifyHub).
 
@@ -112,15 +114,18 @@ stages:
           - checkout: self
             fetchDepth: 1
 
-          # Variáveis secretas da Library não ficam no ambiente do bash por defeito — mapear em env:.
+          # Variáveis secretas: injetar em env:; nomes DOCENGINE_* alinhados à config ASP.NET na Library.
           - script: |
               set -e
-              if [ -z "${CONNECTION_STRING_DEFAULT:-}" ]; then
-                echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT vazia. Crie a variável na Library, associe o grupo ao pipeline (Pipelines → … → Edit → Variables → Link group) e autorize no pool server31."
+              CONNECTION_STRING_DEFAULT="${_CS_DOCENGINE:-${_CS_LEGACY}}"
+              JWT_SECRET_KEY="${_JWT_DOCENGINE:-${_JWT_LEGACY}}"
+              export CONNECTION_STRING_DEFAULT JWT_SECRET_KEY
+              if [ -z "$CONNECTION_STRING_DEFAULT" ]; then
+                echo "##vso[task.logissue type=error]Connection string vazia: DOCENGINE_ConnectionStrings__DefaultConnection ou CONNECTION_STRING_DEFAULT na Library."
                 exit 1
               fi
-              if [ -z "${JWT_SECRET_KEY:-}" ]; then
-                echo "##vso[task.logissue type=error]JWT_SECRET_KEY vazia. Defina na mesma Library / grupo do pipeline."
+              if [ -z "$JWT_SECRET_KEY" ]; then
+                echo "##vso[task.logissue type=error]JWT vazio: DOCENGINE_Jwt__SecretKey ou JWT_SECRET_KEY na Library."
                 exit 1
               fi
               export REGISTRY=$(containerRegistry)
@@ -135,8 +140,10 @@ stages:
               docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
             displayName: Deploy stack
             env:
-              CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
-              JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+              _CS_DOCENGINE: $(DOCENGINE_ConnectionStrings__DefaultConnection)
+              _CS_LEGACY: $(CONNECTION_STRING_DEFAULT)
+              _JWT_DOCENGINE: $(DOCENGINE_Jwt__SecretKey)
+              _JWT_LEGACY: $(JWT_SECRET_KEY)
 
   - stage: DeployHmg
     displayName: Deploy HMG
@@ -156,8 +163,11 @@ stages:
 
                 - script: |
                     set -e
-                    if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
-                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias (HMG). Associe o grupo de variáveis ao ambiente hmg e ao pipeline."
+                    CONNECTION_STRING_DEFAULT="${_CS_DOCENGINE:-${_CS_LEGACY}}"
+                    JWT_SECRET_KEY="${_JWT_DOCENGINE:-${_JWT_LEGACY}}"
+                    export CONNECTION_STRING_DEFAULT JWT_SECRET_KEY
+                    if [ -z "$CONNECTION_STRING_DEFAULT" ] || [ -z "$JWT_SECRET_KEY" ]; then
+                      echo "##vso[task.logissue type=error]Connection string ou JWT vazios (HMG). DOCENGINE_* ou nomes legacy na Library; grupo ligado ao ambiente hmg."
                       exit 1
                     fi
                     export REGISTRY=$(containerRegistry)
@@ -171,8 +181,10 @@ stages:
                     docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack
                   env:
-                    CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
-                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+                    _CS_DOCENGINE: $(DOCENGINE_ConnectionStrings__DefaultConnection)
+                    _CS_LEGACY: $(CONNECTION_STRING_DEFAULT)
+                    _JWT_DOCENGINE: $(DOCENGINE_Jwt__SecretKey)
+                    _JWT_LEGACY: $(JWT_SECRET_KEY)
 
   - stage: DeployPrd
     displayName: Deploy PRD
@@ -192,8 +204,11 @@ stages:
 
                 - script: |
                     set -e
-                    if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
-                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias (PRD). Associe o grupo de variáveis ao ambiente prd e ao pipeline."
+                    CONNECTION_STRING_DEFAULT="${_CS_DOCENGINE:-${_CS_LEGACY}}"
+                    JWT_SECRET_KEY="${_JWT_DOCENGINE:-${_JWT_LEGACY}}"
+                    export CONNECTION_STRING_DEFAULT JWT_SECRET_KEY
+                    if [ -z "$CONNECTION_STRING_DEFAULT" ] || [ -z "$JWT_SECRET_KEY" ]; then
+                      echo "##vso[task.logissue type=error]Connection string ou JWT vazios (PRD). DOCENGINE_* ou nomes legacy na Library; grupo ligado ao ambiente prd."
                       exit 1
                     fi
                     export REGISTRY=$(containerRegistry)
@@ -207,5 +222,7 @@ stages:
                     docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack
                   env:
-                    CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
-                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
+                    _CS_DOCENGINE: $(DOCENGINE_ConnectionStrings__DefaultConnection)
+                    _CS_LEGACY: $(CONNECTION_STRING_DEFAULT)
+                    _JWT_DOCENGINE: $(DOCENGINE_Jwt__SecretKey)
+                    _JWT_LEGACY: $(JWT_SECRET_KEY)
