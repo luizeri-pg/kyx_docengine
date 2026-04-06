@@ -11,7 +11,7 @@ Backend do **DocEngine** responsável por gerenciar templates e gerar documentos
 - ASP.NET Core Web API
 - Entity Framework Core + PostgreSQL
 - JWT Bearer Authentication
-- Hangfire + Redis
+- Hangfire (memória por defeito; Redis opcional)
 - PuppeteerSharp (HTML -> PDF)
 - PdfSharp (AcroForm -> PDF)
 
@@ -57,8 +57,8 @@ Servidor: `http://localhost:3000`
 
 ## Hangfire (fila de jobs)
 
-- **Development:** por padrão usa **`Memory`** (sem Redis) — ver `appsettings.Development.json` (`Hangfire:Storage`: `Memory`).
-- **Produção / Redis:** defina `Hangfire:Storage` como `Redis` e configure `ConnectionStrings:Redis`. A connection string do Redis inclui `abortConnect=false` no código para não derrubar o processo na primeira conexão.
+- **Por defeito (`appsettings.json` + `Program.cs`):** **`Memory`** — sem Redis; fila e jobs **não** persistem após restart da API; com **várias réplicas**, cada instância tem a sua fila local.
+- **Redis (opcional):** `Hangfire:Storage` = `Redis` e `ConnectionStrings:Redis` (o código acrescenta `abortConnect=false` se faltar).
 
 ## Banco de dados (connection string)
 

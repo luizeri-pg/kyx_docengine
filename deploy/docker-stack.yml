@@ -1,10 +1,10 @@
 # DocEngine — Swarm + Traefik (formato minimalista NotifyHub).
 # Exportar antes do deploy: REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST,
-# CONNECTION_STRING_DEFAULT, CONNECTION_STRING_REDIS, JWT_SECRET_KEY
+# CONNECTION_STRING_DEFAULT, JWT_SECRET_KEY
 #
 #   docker stack deploy --with-registry-auth -c deploy/docker-stack.yml <stack>
 #
-# Stack completo com Postgres/Redis local: usar compose.stack.yaml na raiz.
+# Stack completo com Postgres local: compose.stack.yaml na raiz.
 version: "3.9"
 
 services:
@@ -14,8 +14,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "${CONNECTION_STRING_DEFAULT}"
-      ConnectionStrings__Redis: "${CONNECTION_STRING_REDIS}"
-      Hangfire__Storage: Redis
+      Hangfire__Storage: Memory
       Database__ApplyMigrationsOnStartup: "true"
       Cors__AllowedOrigins__0: "https://${WEB_HOST}"
       Jwt__SecretKey: "${JWT_SECRET_KEY}"

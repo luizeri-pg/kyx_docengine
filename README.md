@@ -20,7 +20,7 @@ Especificação em [`SDD/`](SDD/) — escopo: **geração de PDF** (templates HT
 
 ## Stack
 
-- Backend: .NET 10 + PostgreSQL + Hangfire (Redis ou memória em dev)
+- Backend: .NET 10 + PostgreSQL + Hangfire (memória por defeito; Redis opcional)
 - Frontend: Vite + React + TypeScript — telas: **Templates**, **Gerar documento**, **Jobs**
 
 ## Início rápido
@@ -62,7 +62,7 @@ Frontend em `http://localhost:5173`.
 
 - **PostgreSQL:** connection string em `appsettings.json` ou `appsettings.Local.json` (ver [`backend/README.md`](backend/README.md)).
 - **Migrações no arranque:** por defeito **desligadas** (`Database:ApplyMigrationsOnStartup: false`) — a API **não cria tabelas** ao iniciar; use `dotnet ef database update` ou scripts DBA quando quiser aplicar o schema.
-- **Hangfire:** em Development o padrão é **memória** (`appsettings.Development.json`); produção com Redis — ver backend README.
+- **Hangfire:** padrão **memória** (também em produção, salvo configurares Redis) — ver [`backend/README.md`](backend/README.md).
 
 Para criar/atualizar o schema (quando tiver permissão no PostgreSQL), rode:
 

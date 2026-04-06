@@ -62,8 +62,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 
-// Hangfire: Redis (produção) ou Memory (dev sem Redis local). Ver appsettings.Development.json
-var hangfireStorage = builder.Configuration["Hangfire:Storage"] ?? "Redis";
+// Hangfire: Memory por defeito (sem Redis). Para Redis: Hangfire:Storage=Redis + ConnectionStrings:Redis.
+var hangfireStorage = builder.Configuration["Hangfire:Storage"] ?? "Memory";
 builder.Services.AddHangfire(config =>
 {
     config

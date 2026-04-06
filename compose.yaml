@@ -17,14 +17,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
   api:
     build:
       context: ./backend/KYX.DocEngine.API
@@ -34,8 +26,7 @@ services:
       # Porta interna 8080 (igual Swarm/NotifyHub); host continua em 3000.
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=docengine;Username=postgres;Password=postgres"
-      ConnectionStrings__Redis: redis:6379
-      Hangfire__Storage: Redis
+      Hangfire__Storage: Memory
       Database__ApplyMigrationsOnStartup: "true"
       Cors__AllowedOrigins__0: "http://localhost:8088"
       Cors__AllowedOrigins__1: "http://127.0.0.1:8088"
@@ -43,8 +34,6 @@ services:
       - "3000:8080"
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
 
   web:

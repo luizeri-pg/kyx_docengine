@@ -144,6 +144,6 @@ open demo.pdf   # macOS
 | Sintoma | Causa provável |
 |---------|----------------|
 | **HTTP 500** em `POST /documents/generate` (template inline) | Na BD remota falta a migração **`DocumentJobInlineTemplateSnapshot`**: coluna `template_snapshot_json` e `template_id` nullable em `document_jobs`. Rode `dotnet ef database update` com a mesma connection string da API **ou** o SQL em [`sql/alter-document_jobs-inline-template.sql`](./sql/alter-document_jobs-inline-template.sql). Depois de recompilar a API, a resposta 500 inclui `mensagem` com o erro PostgreSQL (ex.: *column ... does not exist*). |
-| Job fica `pending` / não completa | Hangfire não está a processar (Redis indisponível, worker parado). |
+| Job fica `pending` / não completa | Hangfire não está a processar (worker parado, ou réplica errada com fila em memória). |
 | Erro ao migrar / sem tabelas | Permissões no PostgreSQL ou migrar com utilizador adequado. |
 | Template não encontrado | Slug errado ou seed não correu (não é Development ou migração falhou). |

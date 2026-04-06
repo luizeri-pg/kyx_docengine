@@ -4,7 +4,7 @@
 # Deploy (server31): docker stack deploy com deploy/docker-stack.yml
 #
 # Secrets (por ambiente / Library): ACR_USERNAME, ACR_PASSWORD, JWT_SECRET_KEY,
-# CONNECTION_STRING_DEFAULT (Npgsql completa), CONNECTION_STRING_REDIS (ex.: host:6379)
+# CONNECTION_STRING_DEFAULT (Npgsql completa)
 #
 # Ambientes Azure DevOps: hmg, prd (como no NotifyHub).
 
@@ -120,7 +120,6 @@ stages:
               export WEB_HOST=$(webHostDev)
               export STACK_NAME=$(stackNameDev)
               export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-              export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
               export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
               docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
               docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
@@ -150,7 +149,6 @@ stages:
                     export WEB_HOST=$(webHostHmg)
                     export STACK_NAME=$(stackNameHmg)
                     export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-                    export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
@@ -180,7 +178,6 @@ stages:
                     export WEB_HOST=$(webHostPrd)
                     export STACK_NAME=$(stackNamePrd)
                     export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-                    export CONNECTION_STRING_REDIS="$(CONNECTION_STRING_REDIS)"
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Gera deploy/docker-stack.env.yml a partir de variáveis de ambiente e faz docker stack deploy.
 # Obrigatório: REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST, CONNECTION_STRING_DEFAULT,
-#             CONNECTION_STRING_REDIS, JWT_SECRET_KEY
+#             JWT_SECRET_KEY
 # Opcional: chaves em KEYS abaixo (Jwt__Issuer, Cors__*, etc.)
 set -euo pipefail
 
@@ -9,7 +9,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 : "${REGISTRY:?}" "${TAG:?}" "${STACK_NAME:?}" "${API_HOST:?}" "${WEB_HOST:?}"
-: "${CONNECTION_STRING_DEFAULT:?}" "${CONNECTION_STRING_REDIS:?}" "${JWT_SECRET_KEY:?}"
+: "${CONNECTION_STRING_DEFAULT:?}" "${JWT_SECRET_KEY:?}"
 
 OVERRIDE_FILE="$ROOT/deploy/docker-stack.env.yml"
 : > "$OVERRIDE_FILE"
