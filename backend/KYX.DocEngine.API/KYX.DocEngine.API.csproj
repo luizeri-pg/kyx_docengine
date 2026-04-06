@@ -27,6 +27,7 @@
     <PackageReference Include="Hangfire.AspNetCore" Version="*" />
     <PackageReference Include="Hangfire.Redis.StackExchange" Version="*" />
     <PackageReference Include="Hangfire.MemoryStorage" Version="*" />
+    <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="*" />
     <PackageReference Include="PdfSharp" Version="*" />
     <PackageReference Include="PuppeteerSharp" Version="*" />

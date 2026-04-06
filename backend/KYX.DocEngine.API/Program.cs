@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Data;
 using System.Text;
+using Dapper;
 using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.MemoryStorage;
@@ -24,11 +26,7 @@ var isDevelopment = builder.Environment.IsDevelopment();
 // 1) Base + local (secrets)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
-// 2) Schema tb_usuario/tb_perfil/tb_log: inspeciona colunas na BD e aplica appsettings.LegacyTbUsuario.json ANTES de configurar serviços.
-//    Se não fizermos isto aqui, SchemaTableOptions é configurado com valores "novos" (id/nome) mas a tabela é legada (id_usuario/str_login).
-LegacyTbUsuarioSchemaProbe.MergeIfDatabaseMatchesLegacyModel(builder.Configuration);
-
-// 3) Swarm/produção: validar secrets críticos (falha cedo se ausentes)
+// 2) Swarm/produção: validar secrets críticos (falha cedo se ausentes)
 if (!builder.Environment.IsDevelopment())
 {
     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -124,7 +122,17 @@ builder.Services.AddHangfireServer(options =>
 
 builder.Services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+
+// Auth: modo PartnerDB (Dapper) com Fallback em memória
+builder.Services.AddScoped<IDbConnection>(sp =>
+{
+    var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
+    return new Npgsql.NpgsqlConnection(connectionString);
+});
+builder.Services.AddScoped<PartnerDbAuthService>();
+builder.Services.AddScoped<FallbackAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddScoped<ITemplateService, TemplateService>();
 builder.Services.AddScoped<IDocumentJobService, DocumentJobService>();
 builder.Services.AddScoped<IHtmlPdfRenderer, HtmlPdfRenderer>();
