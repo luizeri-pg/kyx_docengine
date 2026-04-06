@@ -112,14 +112,15 @@ stages:
           - checkout: self
             fetchDepth: 1
 
+          # Variáveis secretas da Library não ficam no ambiente do bash por defeito — mapear em env:.
           - script: |
               set -e
               if [ -z "${CONNECTION_STRING_DEFAULT:-}" ]; then
-                echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT vazia ou não disponível neste job. Defina na Library, marque o grupo de variáveis no pipeline e autorize no pool server31."
+                echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT vazia. Crie a variável na Library, associe o grupo ao pipeline (Pipelines → … → Edit → Variables → Link group) e autorize no pool server31."
                 exit 1
               fi
               if [ -z "${JWT_SECRET_KEY:-}" ]; then
-                echo "##vso[task.logissue type=error]JWT_SECRET_KEY vazia ou não disponível neste job."
+                echo "##vso[task.logissue type=error]JWT_SECRET_KEY vazia. Defina na mesma Library / grupo do pipeline."
                 exit 1
               fi
               export REGISTRY=$(containerRegistry)
@@ -127,14 +128,15 @@ stages:
               export API_HOST=$(apiHostDev)
               export WEB_HOST=$(webHostDev)
               export STACK_NAME=$(stackNameDev)
-              export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-              export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
               docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
               docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
               echo "--- Estado dos serviços (API = ${STACK_NAME}_api) ---"
               docker stack services "${STACK_NAME}" || true
               docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
             displayName: Deploy stack
+            env:
+              CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
+              JWT_SECRET_KEY: $(JWT_SECRET_KEY)
 
   - stage: DeployHmg
     displayName: Deploy HMG
@@ -155,7 +157,7 @@ stages:
                 - script: |
                     set -e
                     if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
-                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias neste ambiente (HMG)."
+                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias (HMG). Associe o grupo de variáveis ao ambiente hmg e ao pipeline."
                       exit 1
                     fi
                     export REGISTRY=$(containerRegistry)
@@ -163,13 +165,14 @@ stages:
                     export API_HOST=$(apiHostHmg)
                     export WEB_HOST=$(webHostHmg)
                     export STACK_NAME=$(stackNameHmg)
-                    export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-                    export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
                     docker stack services "${STACK_NAME}" || true
                     docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack
+                  env:
+                    CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
+                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
 
   - stage: DeployPrd
     displayName: Deploy PRD
@@ -190,7 +193,7 @@ stages:
                 - script: |
                     set -e
                     if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
-                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias neste ambiente (PRD)."
+                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias (PRD). Associe o grupo de variáveis ao ambiente prd e ao pipeline."
                       exit 1
                     fi
                     export REGISTRY=$(containerRegistry)
@@ -198,10 +201,11 @@ stages:
                     export API_HOST=$(apiHostPrd)
                     export WEB_HOST=$(webHostPrd)
                     export STACK_NAME=$(stackNamePrd)
-                    export CONNECTION_STRING_DEFAULT="$(CONNECTION_STRING_DEFAULT)"
-                    export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
                     docker stack services "${STACK_NAME}" || true
                     docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack
+                  env:
+                    CONNECTION_STRING_DEFAULT: $(CONNECTION_STRING_DEFAULT)
+                    JWT_SECRET_KEY: $(JWT_SECRET_KEY)
