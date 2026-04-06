@@ -6,43 +6,22 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+# Produção no Swarm: URL absoluta da API (CORS já permitido no backend). Compose local usa /api + proxy nginx.
 ARG VITE_API_URL=/api
 ENV VITE_API_URL=${VITE_API_URL}
 RUN npm run build
 
-# Etapa final: serve arquivos estáticos com NGINX
+# Runtime: nginx com template envsubst (imagem oficial) — proxy /api/ com DNS dinâmico no Swarm
 FROM nginx:1.27-alpine AS runtime
 WORKDIR /usr/share/nginx/html
 
-RUN rm /etc/nginx/conf.d/default.conf
+RUN rm -f /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist ./
+COPY nginx/templates/default.conf.template /etc/nginx/templates/default.conf.template
 
-# SPA + proxy /api/ para o serviço api no Compose (porta interna 8080); gzip básico
-RUN printf '%s\n' \
-    'server {' \
-    '    listen 80;' \
-    '    server_name _;' \
-    '    root /usr/share/nginx/html;' \
-    '    index index.html;' \
-    '' \
-    '    gzip on;' \
-    '    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;' \
-    '' \
-    '    location /api/ {' \
-    '        proxy_pass http://api:8080/;' \
-    '        proxy_http_version 1.1;' \
-    '        proxy_set_header Host $host;' \
-    '        proxy_set_header X-Real-IP $remote_addr;' \
-    '        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;' \
-    '        proxy_set_header X-Forwarded-Proto $scheme;' \
-    '        proxy_read_timeout 120s;' \
-    '    }' \
-    '' \
-    '    location / {' \
-    '        try_files $uri $uri/ /index.html;' \
-    '    }' \
-    '}' \
-    > /etc/nginx/conf.d/default.conf
+# Upstream do serviço DocEngine na mesma rede overlay (nome do serviço no compose/stack).
+ENV API_UPSTREAM_HOST=api
+ENV API_UPSTREAM_PORT=8080
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]

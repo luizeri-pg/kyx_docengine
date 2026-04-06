@@ -42,6 +42,10 @@ services:
 
   frontend:
     image: ${REGISTRY}/docengine-web:${TAG}
+    environment:
+      # Nome do serviço API na mesma rede overlay (deploy/docker-stack.yml → service "api").
+      API_UPSTREAM_HOST: api
+      API_UPSTREAM_PORT: "8080"
     deploy:
       replicas: 1
       restart_policy:

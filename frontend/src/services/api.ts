@@ -17,7 +17,8 @@ function resolveApiBaseUrl(): string {
     }
     return raw;
   }
-  return raw || 'http://localhost:3000';
+  // Produção: URL absoluta (build com VITE_API_URL=https://api...) ou /api (proxy nginx no mesmo host).
+  return (raw && raw.length > 0 ? raw : '/api').trim();
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();
