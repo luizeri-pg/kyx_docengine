@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using KYX.DocEngine.API.Data;
@@ -26,21 +27,39 @@ public class RequestLoggingMiddleware
     public async Task InvokeAsync(HttpContext context, DocEngineDbContext db)
     {
         var stopwatch = Stopwatch.StartNew();
-        context.Request.EnableBuffering();
-        var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
-        context.Request.Body.Position = 0;
+
+        // GET/HEAD sem corpo: não ler stream (evita falhas com proxy / stream não seekable → 500).
+        var requestBody = "";
+        if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method))
+        {
+            context.Request.EnableBuffering();
+            using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true))
+            {
+                requestBody = await reader.ReadToEndAsync();
+            }
+
+            if (context.Request.Body.CanSeek)
+                context.Request.Body.Position = 0;
+        }
 
         var originalBody = context.Response.Body;
         await using var responseBuffer = new MemoryStream();
         context.Response.Body = responseBuffer;
 
-        await _next(context);
-
-        responseBuffer.Position = 0;
-        var responseBody = await new StreamReader(responseBuffer).ReadToEndAsync();
-        responseBuffer.Position = 0;
-        await responseBuffer.CopyToAsync(originalBody);
-        context.Response.Body = originalBody;
+        var responseBody = "";
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            // Sempre repor o stream de resposta (se _next falhar sem isto, o Kestrel devolve 500 sem corpo).
+            responseBuffer.Position = 0;
+            responseBody = await new StreamReader(responseBuffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true).ReadToEndAsync();
+            responseBuffer.Position = 0;
+            await responseBuffer.CopyToAsync(originalBody);
+            context.Response.Body = originalBody;
+        }
 
         stopwatch.Stop();
         string? requisicaoId = null;
