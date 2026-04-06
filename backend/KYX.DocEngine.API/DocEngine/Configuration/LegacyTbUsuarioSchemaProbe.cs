@@ -20,24 +20,40 @@ public static class LegacyTbUsuarioSchemaProbe
     {
         var cs = configuration.GetConnectionString("DefaultConnection");
         if (string.IsNullOrWhiteSpace(cs))
+        {
+            Console.WriteLine("[SchemaProbe] Connection string não definida — schema só de ficheiros.");
             return;
+        }
+
+        Console.WriteLine("[SchemaProbe] A ligar à BD para inspecionar tb_usuario...");
 
         try
         {
             using var conn = new NpgsqlConnection(cs);
             conn.Open();
-            if (!TbUsuarioLooksLikeLegacyKyx(conn))
-                return;
+            Console.WriteLine("[SchemaProbe] Ligação aberta. A ler colunas de tb_usuario...");
 
-            var path = Path.Combine(AppContext.BaseDirectory, LegacySettingsFile);
-            if (!File.Exists(path))
+            if (!TbUsuarioLooksLikeLegacyKyx(conn))
             {
-                Console.Error.WriteLine(
-                    $"AVISO: tb_usuario legada detetada mas {LegacySettingsFile} não existe no output da aplicação.");
+                Console.WriteLine("[SchemaProbe] tb_usuario não parece ser modelo KYX legado (str_login ausente).");
                 return;
             }
 
+            Console.WriteLine("[SchemaProbe] tb_usuario legada detetada (str_login presente).");
+
+            var path = Path.Combine(AppContext.BaseDirectory, LegacySettingsFile);
+            Console.WriteLine($"[SchemaProbe] A procurar ficheiro: {path}");
+
+            if (!File.Exists(path))
+            {
+                Console.Error.WriteLine(
+                    $"[SchemaProbe] AVISO: tb_usuario legada detetada mas {LegacySettingsFile} não existe no output da aplicação.");
+                return;
+            }
+
+            Console.WriteLine($"[SchemaProbe] A aplicar {LegacySettingsFile}...");
             configuration.AddJsonFile(path, optional: false, reloadOnChange: false);
+            Console.WriteLine("[SchemaProbe] Schema legado aplicado com sucesso.");
         }
         catch (Exception ex)
         {

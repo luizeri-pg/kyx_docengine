@@ -20,13 +20,15 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var isDevelopment = builder.Environment.IsDevelopment();
-// Sobrescreve secrets/local (não versionar: appsettings.Local.json está no .gitignore)
+
+// 1) Base + local (secrets)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
-// Schema tb_usuario/tb_perfil/tb_log: inspeciona colunas na BD e aplica appsettings.LegacyTbUsuario.json se for modelo KYX/Notify.
+// 2) Schema tb_usuario/tb_perfil/tb_log: inspeciona colunas na BD e aplica appsettings.LegacyTbUsuario.json ANTES de configurar serviços.
+//    Se não fizermos isto aqui, SchemaTableOptions é configurado com valores "novos" (id/nome) mas a tabela é legada (id_usuario/str_login).
 LegacyTbUsuarioSchemaProbe.MergeIfDatabaseMatchesLegacyModel(builder.Configuration);
 
-// Swarm/produção: variáveis vazias substituem appsettings — sem isto o contentor reinicia sem mensagem clara.
+// 3) Swarm/produção: validar secrets críticos (falha cedo se ausentes)
 if (!builder.Environment.IsDevelopment())
 {
     var conn = builder.Configuration.GetConnectionString("DefaultConnection");
