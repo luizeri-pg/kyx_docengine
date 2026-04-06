@@ -1,6 +1,6 @@
 # DocEngine — alinhado à estrutura NotifyHub (stages Build + Deploy Dev/HMG/PRD).
-# Build (server28): mesma ordem NotifyHub (front → backend); entre os dois vai o publish .NET em Docker.
-# Se o passo SDK falhar com 137, mover o bloco "dotnet publish API" para antes do Build & Push frontend.
+# Build (server28): publish .NET em Docker → imagem API → imagem web (se a API falhar, não empurra web órfão).
+# Se o passo SDK falhar com 137, isolar restore/publish ou aumentar RAM no agente.
 # Deploy (server31): docker stack deploy com deploy/docker-stack.yml
 #
 # Secrets (por ambiente / Library): ACR_USERNAME, ACR_PASSWORD, JWT_SECRET_KEY,
@@ -42,19 +42,6 @@ stages:
         steps:
           - checkout: self
             fetchDepth: 0
-
-          - task: Docker@2
-            displayName: Build & Push frontend
-            inputs:
-              containerRegistry: $(dockerRegistryServiceConnection)
-              repository: $(imageRepositoryWeb)
-              command: buildAndPush
-              Dockerfile: frontend/Dockerfile
-              buildContext: frontend
-              arguments: "--build-arg VITE_API_URL=https://$(apiHostDev)"
-              tags: |
-                $(imageTag)
-                latest
 
           - script: |
               set -e
@@ -100,6 +87,19 @@ stages:
                 $(imageTag)
                 latest
 
+          - task: Docker@2
+            displayName: Build & Push frontend
+            inputs:
+              containerRegistry: $(dockerRegistryServiceConnection)
+              repository: $(imageRepositoryWeb)
+              command: buildAndPush
+              Dockerfile: frontend/Dockerfile
+              buildContext: frontend
+              arguments: "--build-arg VITE_API_URL=https://$(apiHostDev)"
+              tags: |
+                $(imageTag)
+                latest
+
   - stage: Deploy
     displayName: Deploy Dev
     dependsOn: Build
@@ -114,6 +114,14 @@ stages:
 
           - script: |
               set -e
+              if [ -z "${CONNECTION_STRING_DEFAULT:-}" ]; then
+                echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT vazia ou não disponível neste job. Defina na Library, marque o grupo de variáveis no pipeline e autorize no pool server31."
+                exit 1
+              fi
+              if [ -z "${JWT_SECRET_KEY:-}" ]; then
+                echo "##vso[task.logissue type=error]JWT_SECRET_KEY vazia ou não disponível neste job."
+                exit 1
+              fi
               export REGISTRY=$(containerRegistry)
               export TAG=$(imageTag)
               export API_HOST=$(apiHostDev)
@@ -123,6 +131,9 @@ stages:
               export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
               docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
               docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+              echo "--- Estado dos serviços (API = ${STACK_NAME}_api) ---"
+              docker stack services "${STACK_NAME}" || true
+              docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
             displayName: Deploy stack
 
   - stage: DeployHmg
@@ -143,6 +154,10 @@ stages:
 
                 - script: |
                     set -e
+                    if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
+                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias neste ambiente (HMG)."
+                      exit 1
+                    fi
                     export REGISTRY=$(containerRegistry)
                     export TAG=$(imageTag)
                     export API_HOST=$(apiHostHmg)
@@ -152,6 +167,8 @@ stages:
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+                    docker stack services "${STACK_NAME}" || true
+                    docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack
 
   - stage: DeployPrd
@@ -172,6 +189,10 @@ stages:
 
                 - script: |
                     set -e
+                    if [ -z "${CONNECTION_STRING_DEFAULT:-}" ] || [ -z "${JWT_SECRET_KEY:-}" ]; then
+                      echo "##vso[task.logissue type=error]CONNECTION_STRING_DEFAULT ou JWT_SECRET_KEY vazias neste ambiente (PRD)."
+                      exit 1
+                    fi
                     export REGISTRY=$(containerRegistry)
                     export TAG=$(imageTag)
                     export API_HOST=$(apiHostPrd)
@@ -181,4 +202,6 @@ stages:
                     export JWT_SECRET_KEY="$(JWT_SECRET_KEY)"
                     docker login $(containerRegistry) -u "$(ACR_USERNAME)" -p "$(ACR_PASSWORD)"
                     docker stack deploy --with-registry-auth -c deploy/docker-stack.yml ${STACK_NAME}
+                    docker stack services "${STACK_NAME}" || true
+                    docker service ps "${STACK_NAME}_api" --no-trunc 2>/dev/null || true
                   displayName: Deploy stack

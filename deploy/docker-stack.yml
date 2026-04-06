@@ -2,6 +2,9 @@
 # Exportar antes do deploy: REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST,
 # CONNECTION_STRING_DEFAULT, JWT_SECRET_KEY
 #
+# Atenção: palavras-passe com " $ \ ou quebras de linha podem partir o YAML após substituição.
+# Nesse caso use Docker secrets / ficheiro env com aspas corretas ou base64 no pipeline.
+#
 #   docker stack deploy --with-registry-auth -c deploy/docker-stack.yml <stack>
 #
 # Stack completo com Postgres local: compose.stack.yaml na raiz.

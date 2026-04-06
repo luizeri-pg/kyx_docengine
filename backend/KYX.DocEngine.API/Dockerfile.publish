@@ -5,6 +5,7 @@ WORKDIR /app
 
 RUN apk add --no-cache \
     chromium \
+    curl \
     fontconfig \
     freetype \
     ttf-freefont \
@@ -19,4 +20,7 @@ ENV DOTNET_USE_POLLING_FILE_WATCHER=1
 COPY publish/ .
 
 EXPOSE 8080
+# Migrações no arranque podem demorar na primeira réplica.
+HEALTHCHECK --interval=20s --timeout=5s --start-period=120s --retries=5 \
+  CMD curl -fsS http://127.0.0.1:8080/health || exit 1
 ENTRYPOINT ["dotnet", "KYX.DocEngine.API.dll"]

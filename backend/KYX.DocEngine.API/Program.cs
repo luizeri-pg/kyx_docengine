@@ -23,6 +23,26 @@ var isDevelopment = builder.Environment.IsDevelopment();
 // Sobrescreve secrets/local (não versionar: appsettings.Local.json está no .gitignore)
 builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
 
+// Swarm/produção: variáveis vazias substituem appsettings — sem isto o contentor reinicia sem mensagem clara.
+if (!builder.Environment.IsDevelopment())
+{
+    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(conn))
+    {
+        Console.Error.WriteLine(
+            "FATAL: ConnectionStrings__DefaultConnection vazia. No pipeline, defina o secret CONNECTION_STRING_DEFAULT (Library) e associe-o ao job de deploy.");
+        Environment.Exit(3);
+    }
+
+    var jwtSecret = (builder.Configuration["Jwt:SecretKey"] ?? string.Empty).Trim();
+    if (jwtSecret.Length < 16)
+    {
+        Console.Error.WriteLine(
+            "FATAL: Jwt__SecretKey vazia ou curta (< 16 caracteres). Defina JWT_SECRET_KEY no pipeline/Library.");
+        Environment.Exit(4);
+    }
+}
+
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<AuthSettings>(builder.Configuration.GetSection("Auth"));
 builder.Services.Configure<SchemaTableOptions>(builder.Configuration.GetSection("Schema"));
