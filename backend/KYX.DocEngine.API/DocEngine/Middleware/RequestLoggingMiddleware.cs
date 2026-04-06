@@ -12,6 +12,8 @@ namespace KYX.DocEngine.API.Middleware;
 
 public class RequestLoggingMiddleware
 {
+    private const int MaxLoggedRequestBodyChars = 262144; // 256 KiB — evita payloads enormes na tb_log_requisicao
+
     private readonly RequestDelegate _next;
     private readonly ILogger<RequestLoggingMiddleware> _logger;
     private readonly bool _persistTbLog;
@@ -28,7 +30,7 @@ public class RequestLoggingMiddleware
     {
         var stopwatch = Stopwatch.StartNew();
 
-        // GET/HEAD sem corpo: não ler stream (evita falhas com proxy / stream não seekable → 500).
+        // GET/HEAD: não ler corpo do pedido (streams atrás de proxy podem não suportar seek).
         var requestBody = "";
         if (!HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method))
         {
@@ -42,35 +44,35 @@ public class RequestLoggingMiddleware
                 context.Request.Body.Position = 0;
         }
 
-        // GET/HEAD: não substituir Response.Body — evita 500 opacos com proxy/Kestrel e não precisamos do corpo para auditoria.
-        var captureResponse = !HttpMethods.IsGet(context.Request.Method) && !HttpMethods.IsHead(context.Request.Method);
-        string responseBody;
-        if (captureResponse)
+        // Nunca substituir Response.Body: cópia para MemoryStream falha com exceções no pipeline, proxy ou respostas grandes → 500 opaco.
+        try
         {
-            var originalBody = context.Response.Body;
-            await using var responseBuffer = new MemoryStream();
-            context.Response.Body = responseBuffer;
-            responseBody = "";
-            try
-            {
-                await _next(context);
-            }
-            finally
-            {
-                responseBuffer.Position = 0;
-                responseBody = await new StreamReader(responseBuffer, Encoding.UTF8, detectEncodingFromByteOrderMarks: false, bufferSize: 1024, leaveOpen: true).ReadToEndAsync();
-                responseBuffer.Position = 0;
-                await responseBuffer.CopyToAsync(originalBody);
-                context.Response.Body = originalBody;
-            }
-        }
-        else
-        {
-            responseBody = "";
             await _next(context);
+        }
+        catch
+        {
+            stopwatch.Stop();
+            throw;
         }
 
         stopwatch.Stop();
+
+        if (!_persistTbLog)
+            return;
+
+        try
+        {
+            await TryPersistLogAsync(context, db, requestBody, stopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            // Nunca derrubar o pedido depois da resposta já enviada.
+            _logger.LogWarning(ex, "RequestLoggingMiddleware: falha ao gravar auditoria para {Path}", context.Request.Path);
+        }
+    }
+
+    private async Task TryPersistLogAsync(HttpContext context, DocEngineDbContext db, string requestBody, long elapsedMs)
+    {
         string? requisicaoId = null;
         string? centroCusto = null;
         try
@@ -79,32 +81,24 @@ public class RequestLoggingMiddleware
             {
                 var json = JsonDocument.Parse(requestBody);
                 if (json.RootElement.TryGetProperty("requisicaoId", out var rid))
-                {
                     requisicaoId = rid.GetString();
-                }
 
                 if (json.RootElement.TryGetProperty("config", out var config)
                     && config.TryGetProperty("centroCusto", out var cc))
-                {
                     centroCusto = cc.GetString();
-                }
             }
         }
         catch
         {
-            // Não interrompe o request por erro de parse de log.
+            // Ignorar JSON inválido para extração de ids.
         }
 
         var ridFinal = requisicaoId ?? Guid.NewGuid().ToString();
         var userId = context.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
         var path = context.Request.Path.Value ?? "";
         var method = context.Request.Method;
-        var ms = (int)Math.Min(stopwatch.ElapsedMilliseconds, int.MaxValue);
-
-        if (!_persistTbLog)
-        {
-            return;
-        }
+        var ms = (int)Math.Min(elapsedMs, int.MaxValue);
+        var bodyForLog = TruncateForLog(requestBody, MaxLoggedRequestBodyChars);
 
         try
         {
@@ -115,8 +109,8 @@ public class RequestLoggingMiddleware
                 UsuarioId = userId,
                 Canal = "docengine",
                 CentroCusto = centroCusto,
-                RequestPayload = AuditPayloadHelper.ToRequestPayloadJson(path, method, requestBody),
-                ResponsePayload = AuditPayloadHelper.ToResponsePayloadJson(responseBody),
+                RequestPayload = AuditPayloadHelper.ToRequestPayloadJson(path, method, bodyForLog),
+                ResponsePayload = "{}",
                 StatusHttp = context.Response.StatusCode,
                 TempoRespostaMs = ms,
                 Erro = context.Response.StatusCode >= 400 ? $"HTTP {context.Response.StatusCode}" : null,
@@ -147,6 +141,13 @@ public class RequestLoggingMiddleware
                 _logger.LogWarning(ex, "Falha ao persistir tb_log_requisicao para {Path}", context.Request.Path);
             }
         }
+    }
+
+    private static string TruncateForLog(string body, int maxChars)
+    {
+        if (string.IsNullOrEmpty(body) || body.Length <= maxChars)
+            return body;
+        return body[..maxChars] + "…[truncado]";
     }
 
     private static bool IsRelationMissing(Exception ex)
