@@ -1,9 +1,9 @@
-using System.Data;
 using Dapper;
 using KYX.DocEngine.API.Configuration;
 using KYX.DocEngine.API.Models.DTOs.Auth;
 using KYX.DocEngine.API.Models.Entities;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace KYX.DocEngine.API.Services;
 
@@ -13,18 +13,18 @@ namespace KYX.DocEngine.API.Services;
 /// </summary>
 public class PartnerDbAuthService : IAuthService
 {
-    private readonly IDbConnection _dbConnection;
+    private readonly string _connectionString;
     private readonly IJwtService _jwtService;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<PartnerDbAuthService> _logger;
 
     public PartnerDbAuthService(
-        IDbConnection dbConnection,
+        IConfiguration configuration,
         IJwtService jwtService,
         IOptions<JwtSettings> jwtSettings,
         ILogger<PartnerDbAuthService> logger)
     {
-        _dbConnection = dbConnection;
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
         _jwtService = jwtService;
         _jwtSettings = jwtSettings.Value;
         _logger = logger;
@@ -50,8 +50,9 @@ public class PartnerDbAuthService : IAuthService
                OR str_descricao = @login
             LIMIT 1";
 
-        var usuario = await _dbConnection.QueryFirstOrDefaultAsync<PartnerUsuario>(
-            sql, 
+        await using var dbConnection = new NpgsqlConnection(_connectionString);
+        var usuario = await dbConnection.QueryFirstOrDefaultAsync<PartnerUsuario>(
+            sql,
             new { login = username });
 
         if (usuario == null)

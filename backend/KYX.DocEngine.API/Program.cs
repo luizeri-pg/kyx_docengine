@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Data;
 using System.Text;
 using Dapper;
 using Hangfire;
@@ -124,11 +123,6 @@ builder.Services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Auth: modo PartnerDB (Dapper) com Fallback em memória
-builder.Services.AddScoped<IDbConnection>(sp =>
-{
-    var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection");
-    return new Npgsql.NpgsqlConnection(connectionString);
-});
 builder.Services.AddScoped<PartnerDbAuthService>();
 builder.Services.AddScoped<FallbackAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
