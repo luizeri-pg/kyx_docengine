@@ -8,6 +8,7 @@ using Hangfire.Redis.StackExchange;
 using KYX.DocEngine.API.Configuration;
 using KYX.DocEngine.API.Data;
 using KYX.DocEngine.API.Filters;
+using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Middleware;
 using KYX.DocEngine.API.Services;
 using KYX.DocEngine.API.Workers;
@@ -58,7 +59,7 @@ builder.Services.AddDbContext<DocEngineDbContext>(options =>
         .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
 var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>() ?? new JwtSettings();
-var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
+var key = JwtKeyHelper.GetSigningKeyBytes(jwtSettings.SecretKey);
 
 builder.Services.AddAuthentication(options =>
 {

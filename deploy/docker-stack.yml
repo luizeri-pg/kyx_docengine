@@ -1,6 +1,6 @@
 # DocEngine — Swarm + Traefik (formato minimalista NotifyHub).
 # Exportar antes do deploy: REGISTRY, TAG, STACK_NAME, API_HOST, WEB_HOST,
-# CONNECTION_STRING_DEFAULT, JWT_SECRET_KEY
+# CONNECTION_STRING_DEFAULT, DOCENGINE_Jwt__SecretKey
 #
 # Atenção: palavras-passe com " $ \ ou quebras de linha podem partir o YAML após substituição.
 # Nesse caso use Docker secrets / ficheiro env com aspas corretas ou base64 no pipeline.
@@ -20,7 +20,7 @@ services:
       Hangfire__Storage: Memory
       Database__ApplyMigrationsOnStartup: "true"
       Cors__AllowedOrigins__0: "https://${WEB_HOST}"
-      Jwt__SecretKey: "${JWT_SECRET_KEY}"
+      Jwt__SecretKey: "${DOCENGINE_Jwt__SecretKey}"
       # true em dev (pipeline exporta); hmg/prd: omitir SWAGGER_ENABLED → false
       Swagger__Enabled: "${SWAGGER_ENABLED:-false}"
     deploy:

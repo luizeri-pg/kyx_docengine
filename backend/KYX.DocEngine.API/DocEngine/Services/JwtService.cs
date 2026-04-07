@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using KYX.DocEngine.API.Configuration;
+using KYX.DocEngine.API.Helpers;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -23,7 +23,7 @@ public class JwtService : IJwtService
 
     public string GenerateToken(string username, string userId)
     {
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SecretKey));
+        var key = new SymmetricSecurityKey(JwtKeyHelper.GetSigningKeyBytes(_settings.SecretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var claims = new[]
         {
