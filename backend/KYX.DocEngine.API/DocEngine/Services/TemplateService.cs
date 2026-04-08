@@ -1,8 +1,7 @@
 using System.Text.Json;
-using KYX.DocEngine.API.Data;
-using KYX.DocEngine.API.Helpers;
+using Dapper;
 using KYX.DocEngine.API.Models.Entities;
-using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace KYX.DocEngine.API.Services;
 
@@ -19,12 +18,17 @@ public interface ITemplateService
 
 public class TemplateService : ITemplateService
 {
-    private readonly DocEngineDbContext _db;
+    private readonly string _connectionString;
+    private readonly IPartnerDbFunctionsService _partnerDbFunctionsService;
     private readonly ILogger<TemplateService> _logger;
 
-    public TemplateService(DocEngineDbContext db, ILogger<TemplateService> logger)
+    public TemplateService(
+        IConfiguration configuration,
+        IPartnerDbFunctionsService partnerDbFunctionsService,
+        ILogger<TemplateService> logger)
     {
-        _db = db;
+        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        _partnerDbFunctionsService = partnerDbFunctionsService;
         _logger = logger;
     }
 
@@ -32,30 +36,45 @@ public class TemplateService : ITemplateService
     {
         try
         {
-            return await _db.Templates
-                .Where(t => t.IsActive)
-                .OrderByDescending(t => t.CreatedAt)
-                .ToListAsync();
+            await using var db = new NpgsqlConnection(_connectionString);
+            var rows = await db.QueryAsync<TemplateDbRow>(
+                @"SELECT
+                    id_template AS IdTemplate,
+                    str_enum AS StrEnum,
+                    str_descricao AS StrDescricao,
+                    str_type AS StrType,
+                    str_content AS StrContent,
+                    campos AS Campos
+                  FROM tb_template
+                  ORDER BY id_template DESC");
+
+            return rows.Select(MapRow).ToList();
         }
-        catch (Exception ex) when (PostgresErrors.IsUndefinedTable(ex))
+        catch (Exception ex)
         {
-            _logger.LogWarning(
-                ex,
-                "Tabela «templates» ausente. Ative Database:ApplyMigrationsOnStartup em Development ou execute «dotnet ef database update».");
+            _logger.LogWarning(ex, "Falha ao listar templates em tb_template. Retornando lista vazia.");
             return new List<Template>();
         }
     }
 
-    public Task<Template?> GetByIdAsync(Guid id) => _db.Templates.FirstOrDefaultAsync(t => t.Id == id);
+    public async Task<Template?> GetByIdAsync(Guid id)
+    {
+        var templates = await ListActiveAsync();
+        return templates.FirstOrDefault(t => t.Id == id);
+    }
 
     public Task<Template?> GetBySlugAsync(string slug) =>
-        _db.Templates.FirstOrDefaultAsync(t => t.Slug == slug && t.IsActive);
+        _partnerDbFunctionsService.SelectTemplateAsync(slug);
 
     public async Task<Template> CreateAsync(Template template)
     {
-        _db.Templates.Add(template);
-        await _db.SaveChangesAsync();
-        return template;
+        var result = await _partnerDbFunctionsService.InsertTemplateAsync(template);
+        if (!string.IsNullOrWhiteSpace(result.Erro))
+        {
+            throw new InvalidOperationException(result.Erro);
+        }
+
+        return await GetBySlugAsync(template.Slug) ?? template;
     }
 
     public async Task<Template?> UpdateAsync(Guid id, Template payload)
@@ -66,15 +85,31 @@ public class TemplateService : ITemplateService
             return null;
         }
 
-        current.Slug = payload.Slug;
-        current.Name = payload.Name;
-        current.Type = payload.Type;
-        current.Content = payload.Content;
-        current.RequiredFields = payload.RequiredFields;
-        current.IsActive = payload.IsActive;
-        current.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return current;
+        await using var db = new NpgsqlConnection(_connectionString);
+        var affected = await db.ExecuteAsync(
+            @"UPDATE tb_template
+              SET str_enum = @newSlug,
+                  str_descricao = @name,
+                  str_type = @type,
+                  str_content = @content,
+                  campos = @requiredFields
+              WHERE str_enum = @currentSlug",
+            new
+            {
+                newSlug = payload.Slug,
+                name = payload.Name,
+                type = payload.Type,
+                content = payload.Content,
+                requiredFields = ParseRequiredFields(payload.RequiredFields),
+                currentSlug = current.Slug
+            });
+
+        if (affected == 0)
+        {
+            return null;
+        }
+
+        return await GetBySlugAsync(payload.Slug);
     }
 
     public async Task<bool> SoftDeleteAsync(Guid id)
@@ -85,15 +120,52 @@ public class TemplateService : ITemplateService
             return false;
         }
 
-        current.IsActive = false;
-        current.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return true;
+        await using var db = new NpgsqlConnection(_connectionString);
+        var affected = await db.ExecuteAsync(
+            "DELETE FROM tb_template WHERE str_enum = @slug",
+            new { slug = current.Slug });
+        return affected > 0;
     }
 
     public List<string> ValidateRequiredFields(Template template, Dictionary<string, string> dados)
     {
         var requiredFields = JsonSerializer.Deserialize<List<string>>(template.RequiredFields) ?? new List<string>();
         return requiredFields.Where(field => !dados.ContainsKey(field) || string.IsNullOrWhiteSpace(dados[field])).ToList();
+    }
+
+    private static Template MapRow(TemplateDbRow row)
+    {
+        return new Template
+        {
+            Id = TemplateIdentity.ToGuidFromSlug(row.StrEnum ?? string.Empty),
+            Slug = row.StrEnum ?? string.Empty,
+            Name = row.StrDescricao ?? string.Empty,
+            Type = row.StrType ?? "html",
+            Content = row.StrContent ?? string.Empty,
+            RequiredFields = JsonSerializer.Serialize(row.Campos ?? Array.Empty<string>()),
+            IsActive = true
+        };
+    }
+
+    private static List<string> ParseRequiredFields(string requiredFieldsJson)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<List<string>>(requiredFieldsJson) ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
+        }
+    }
+
+    private sealed class TemplateDbRow
+    {
+        public int IdTemplate { get; init; }
+        public string? StrEnum { get; init; }
+        public string? StrDescricao { get; init; }
+        public string? StrType { get; init; }
+        public string? StrContent { get; init; }
+        public string[]? Campos { get; init; }
     }
 }

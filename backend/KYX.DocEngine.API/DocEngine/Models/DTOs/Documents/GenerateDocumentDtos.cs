@@ -47,6 +47,7 @@ public class DocumentConfig
     public string CentroCusto { get; set; } = null!;
 
     public string NomeArquivo { get; set; } = "documento.pdf";
+    public string? GuidArquivo { get; set; }
 
     /// <summary>
     /// Template enviado no corpo do pedido — <strong>não</strong> é persistido na tabela <c>templates</c>.

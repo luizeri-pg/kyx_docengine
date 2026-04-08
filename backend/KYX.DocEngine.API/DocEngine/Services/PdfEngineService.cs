@@ -78,7 +78,10 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
         await using var page = await browser.NewPageAsync();
         await page.SetContentAsync(html, new NavigationOptions
         {
-            WaitUntil = new[] { WaitUntilNavigation.Networkidle0 }
+            // NetworkIdle0 can hang on some environments; DOMContentLoaded is enough
+            // for static HTML templates like the Fidelizza admission book.
+            WaitUntil = new[] { WaitUntilNavigation.DOMContentLoaded },
+            Timeout = 120000
         });
         return await page.PdfDataAsync(new PdfOptions
         {
@@ -113,7 +116,19 @@ public class AcroFormPdfRenderer : IAcroFormPdfRenderer
         using var inputStream = new MemoryStream(pdfBytes);
         using var outputStream = new MemoryStream();
         var document = PdfReader.Open(inputStream, PdfDocumentOpenMode.Modify);
-        var form = document.AcroForm;
+
+        // Some partner templates are plain PDFs (without AcroForm dictionary).
+        // In that case we still return a valid PDF instead of failing generation.
+        PdfAcroForm? form = null;
+        try
+        {
+            form = document.AcroForm;
+        }
+        catch
+        {
+            form = null;
+        }
+
         if (form?.Fields != null)
         {
             foreach (PdfAcroField field in form.Fields)
@@ -134,9 +149,9 @@ public class AcroFormPdfRenderer : IAcroFormPdfRenderer
             }
         }
 
-        if (document.AcroForm != null)
+        if (form != null)
         {
-            document.AcroForm.Elements.Remove("/NeedAppearances");
+            form.Elements.Remove("/NeedAppearances");
         }
 
         document.Save(outputStream, false);

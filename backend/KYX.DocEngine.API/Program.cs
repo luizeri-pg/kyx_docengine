@@ -125,6 +125,7 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 
 // Auth: modo PartnerDB (Dapper) com Fallback em memória
 builder.Services.AddScoped<PartnerDbAuthService>();
+builder.Services.AddScoped<IPartnerDbFunctionsService, PartnerDbFunctionsService>();
 builder.Services.AddScoped<FallbackAuthService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 

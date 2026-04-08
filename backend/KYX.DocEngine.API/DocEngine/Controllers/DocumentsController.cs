@@ -1,11 +1,9 @@
 using System.Diagnostics;
 using System.Text.Json;
-using Hangfire;
 using KYX.DocEngine.API.Models.DTOs;
 using KYX.DocEngine.API.Models.DTOs.Documents;
 using KYX.DocEngine.API.Models.Entities;
 using KYX.DocEngine.API.Services;
-using KYX.DocEngine.API.Workers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,24 +15,21 @@ namespace KYX.DocEngine.API.Controllers;
 public class DocumentsController : ControllerBase
 {
     private readonly ITemplateService _templateService;
-    private readonly IDocumentJobService _documentJobService;
-    private readonly IBackgroundJobClient _backgroundJobClient;
     private readonly IPdfEngineService _pdfEngine;
+    private readonly IPartnerDbFunctionsService _partnerDbFunctionsService;
     private readonly IConfiguration _configuration;
     private readonly ILogger<DocumentsController> _logger;
 
     public DocumentsController(
         ITemplateService templateService,
-        IDocumentJobService documentJobService,
-        IBackgroundJobClient backgroundJobClient,
         IPdfEngineService pdfEngine,
+        IPartnerDbFunctionsService partnerDbFunctionsService,
         IConfiguration configuration,
         ILogger<DocumentsController> logger)
     {
         _templateService = templateService;
-        _documentJobService = documentJobService;
-        _backgroundJobClient = backgroundJobClient;
         _pdfEngine = pdfEngine;
+        _partnerDbFunctionsService = partnerDbFunctionsService;
         _configuration = configuration;
         _logger = logger;
     }
@@ -132,40 +127,27 @@ public class DocumentsController : ControllerBase
 
         try
         {
-        Template? templateEntity = null;
-        Guid? templateId = null;
-        string? templateSnapshotJson = null;
-
         if (request!.Config.InlineTemplate != null)
         {
-            var inline = request.Config.InlineTemplate;
-            templateEntity = new Template
+            return BadRequest(new ApiResponse<object>
             {
-                Id = Guid.Empty,
-                Slug = "inline",
-                Name = "inline",
-                Type = inline.Type,
-                Content = inline.Content,
-                RequiredFields = JsonSerializer.Serialize(inline.RequiredFields ?? new List<string>()),
-                IsActive = true
-            };
-            templateSnapshotJson = JsonSerializer.Serialize(templateEntity);
+                Sucesso = false,
+                Mensagem = "No padrão atual do BD, use config.template (slug existente em tb_template). inlineTemplate não é suportado neste endpoint.",
+                RequisicaoId = request.RequisicaoId,
+                TempoProcessamento = stopwatch.ElapsedMilliseconds
+            });
         }
-        else
-        {
-            templateEntity = await _templateService.GetBySlugAsync(request.Config.Template!);
-            if (templateEntity == null)
-            {
-                return NotFound(new ApiResponse<object>
-                {
-                    Sucesso = false,
-                    Mensagem = $"Template '{request.Config.Template}' não encontrado.",
-                    RequisicaoId = request.RequisicaoId,
-                    TempoProcessamento = stopwatch.ElapsedMilliseconds
-                });
-            }
 
-            templateId = templateEntity.Id;
+        var templateEntity = await _templateService.GetBySlugAsync(request.Config.Template!);
+        if (templateEntity == null)
+        {
+            return NotFound(new ApiResponse<object>
+            {
+                Sucesso = false,
+                Mensagem = $"Template '{request.Config.Template}' não encontrado.",
+                RequisicaoId = request.RequisicaoId,
+                TempoProcessamento = stopwatch.ElapsedMilliseconds
+            });
         }
 
         var missingFields = _templateService.ValidateRequiredFields(templateEntity, request.Dados);
@@ -180,25 +162,68 @@ public class DocumentsController : ControllerBase
             });
         }
 
-        var job = await _documentJobService.CreateAsync(new DocumentJob
+        var jobId = Guid.NewGuid();
+        if (!Guid.TryParse(request.RequisicaoId, out _))
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Sucesso = false,
+                Mensagem = "requisicaoId deve ser um GUID válido para seguir o padrão do BD.",
+                RequisicaoId = request.RequisicaoId,
+                TempoProcessamento = stopwatch.ElapsedMilliseconds
+            });
+        }
+
+        var guidArquivo = jobId;
+        if (!string.IsNullOrWhiteSpace(request.Config.GuidArquivo) &&
+            !Guid.TryParse(request.Config.GuidArquivo, out guidArquivo))
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Sucesso = false,
+                Mensagem = "config.guidArquivo inválido. Informe um GUID válido.",
+                RequisicaoId = request.RequisicaoId,
+                TempoProcessamento = stopwatch.ElapsedMilliseconds
+            });
+        }
+
+        var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, request.Dados);
+        var pdfBase64 = Convert.ToBase64String(pdfBytes);
+        var dadosPersist = new Dictionary<string, string>(request.Dados, StringComparer.OrdinalIgnoreCase)
+        {
+            ["_pdfBase64"] = pdfBase64
+        };
+
+        var requestToPersist = new GenerateDocumentRequest
         {
             RequisicaoId = request.RequisicaoId,
-            TemplateId = templateId,
-            TemplateSnapshotJson = templateSnapshotJson,
-            CentroCusto = request.Config.CentroCusto,
-            NomeArquivo = request.Config.NomeArquivo,
-            InputData = JsonSerializer.Serialize(request.Dados),
-            Status = "pending"
-        });
+            Config = request.Config,
+            Dados = dadosPersist
+        };
 
-        _backgroundJobClient.Enqueue<IDocumentWorker>("documents", w => w.ProcessAsync(job.Id));
+        var dbInsert = await _partnerDbFunctionsService.InsertDocumentoAsync(
+            requestToPersist,
+            request.Config.Template!,
+            guidArquivo,
+            dadosPersist);
+
+        if (!string.IsNullOrWhiteSpace(dbInsert.Erro))
+        {
+            return BadRequest(new ApiResponse<object>
+            {
+                Sucesso = false,
+                Mensagem = dbInsert.Erro,
+                RequisicaoId = request.RequisicaoId,
+                TempoProcessamento = stopwatch.ElapsedMilliseconds
+            });
+        }
 
         return Ok(new ApiResponse<GenerateDocumentResponse>
         {
             Sucesso = true,
             RequisicaoId = request.RequisicaoId,
             TempoProcessamento = stopwatch.ElapsedMilliseconds,
-            Resultado = new GenerateDocumentResponse { JobId = job.Id, Status = "queued" }
+            Resultado = new GenerateDocumentResponse { JobId = guidArquivo, Status = "completed" }
         });
         }
         catch (Exception ex)
@@ -223,34 +248,35 @@ public class DocumentsController : ControllerBase
     [HttpGet("status/{jobId:guid}")]
     public async Task<IActionResult> GetStatus(Guid jobId)
     {
-        var job = await _documentJobService.GetByIdAsync(jobId);
-        if (job == null)
+        var documento = await _partnerDbFunctionsService.SelectDocumentoAsync(jobId);
+        if (documento == null)
         {
             return NotFound();
         }
 
+        documento.Dados.TryGetValue("_pdfBase64", out var base64);
         var response = new DocumentStatusResponse
         {
-            JobId = job.Id,
-            Status = job.Status,
-            ErrorMessage = job.ErrorMessage
+            JobId = documento.JobId,
+            Status = string.IsNullOrWhiteSpace(base64) ? "processing" : "completed",
+            ErrorMessage = documento.ErrorMessage
         };
 
-        if (job.Status == "completed" && job.ResultBase64 != null)
+        if (!string.IsNullOrWhiteSpace(base64))
         {
             response.Resultado = new DocumentResult
             {
-                Base64 = job.ResultBase64,
+                Base64 = base64,
                 ContentType = "application/pdf",
-                NomeArquivo = job.NomeArquivo
+                NomeArquivo = documento.NomeArquivo
             };
         }
 
         return Ok(new ApiResponse<DocumentStatusResponse>
         {
             Sucesso = true,
-            RequisicaoId = job.RequisicaoId,
-            TempoProcessamento = job.ProcessingTimeMs ?? 0,
+            RequisicaoId = documento.RequisicaoId,
+            TempoProcessamento = 0,
             Resultado = response
         });
     }
@@ -264,19 +290,19 @@ public class DocumentsController : ControllerBase
         [FromQuery] string? search = null)
     {
         var sw = Stopwatch.StartNew();
-        var jobs = await _documentJobService.ListRecentAsync(limit, status, templateType, search);
-        var items = jobs.Select(j => new DocumentJobListItemDto
+        var docs = await _partnerDbFunctionsService.ListDocumentosAsync(limit, search);
+        var items = docs.Select(j => new DocumentJobListItemDto
         {
-            JobId = j.Id,
+            JobId = j.JobId,
             RequisicaoId = j.RequisicaoId,
-            TemplateSlug = j.Template?.Slug ?? (j.TemplateSnapshotJson != null ? "(inline)" : ""),
-            TemplateName = j.Template?.Name ?? (j.TemplateSnapshotJson != null ? "(inline)" : ""),
-            TemplateType = j.Template?.Type ?? "",
+            TemplateSlug = j.TemplateSlug,
+            TemplateName = j.TemplateName,
+            TemplateType = j.TemplateType,
             CentroCusto = j.CentroCusto,
             NomeArquivo = j.NomeArquivo,
             Status = j.Status,
             ErrorMessage = j.ErrorMessage,
-            ProcessingTimeMs = j.ProcessingTimeMs,
+            ProcessingTimeMs = null,
             CreatedAt = j.CreatedAt
         }).ToList();
 

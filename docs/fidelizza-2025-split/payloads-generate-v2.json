@@ -1,0 +1,204 @@
+[
+  {
+    "requisicaoId": "20fa526b-cb21-4357-85a0-56adba4f779e",
+    "config": {
+      "template": "fidelizza_2025_adiantamento_salarial_html_v2",
+      "centroCusto": "20fa526b-cb21-4357-85a0-56adba4f779e",
+      "nomeArquivo": "fidelizza_2025_adiantamento_salarial_html_v2.pdf",
+      "guidArquivo": "9e5a5a65-2385-487d-a68d-c9cf2efa6215"
+    },
+    "dados": {
+      "ADIANT_NAO": "unchecked",
+      "ADIANT_SIM": "checked",
+      "COLABORADOR_CARGO": "Analista",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "DATA_ADMISSAO": "08/04/2026",
+      "VARIAVEL": "ok"
+    }
+  },
+  {
+    "requisicaoId": "f30e02e3-5522-4a65-97dc-ce64c9683ae1",
+    "config": {
+      "template": "fidelizza_2025_autodeclaracao_racial_html_v2",
+      "centroCusto": "f30e02e3-5522-4a65-97dc-ce64c9683ae1",
+      "nomeArquivo": "fidelizza_2025_autodeclaracao_racial_html_v2.pdf",
+      "guidArquivo": "f40888e3-167d-4191-8472-9efb18390b7a"
+    },
+    "dados": {
+      "COLABORADOR_CPF": "123.456.789-00",
+      "COLABORADOR_NASCIMENTO": "mock",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "DATA_ADMISSAO": "08/04/2026",
+      "ETNIA_AMARELA": "unchecked",
+      "ETNIA_BRANCA": "unchecked",
+      "ETNIA_INDIGENA": "unchecked",
+      "ETNIA_PARDA": "checked",
+      "ETNIA_PRETA": "unchecked",
+      "VARIAVEL": "ok"
+    }
+  },
+  {
+    "requisicaoId": "29e031f6-3f15-4200-a04e-e5ef97973516",
+    "config": {
+      "template": "fidelizza_2025_checklist_admissional_html_v2",
+      "centroCusto": "29e031f6-3f15-4200-a04e-e5ef97973516",
+      "nomeArquivo": "fidelizza_2025_checklist_admissional_html_v2.pdf",
+      "guidArquivo": "fe0178f0-3cc3-49a1-841d-8dfdbb989052"
+    },
+    "dados": {
+      "CL_ASO": "unchecked",
+      "CL_CARTAO_PIS": "unchecked",
+      "CL_CERTIDAO": "unchecked",
+      "CL_CERTIDAO_FILHOS": "unchecked",
+      "CL_COMP_ENDERECO": "unchecked",
+      "CL_COVID": "unchecked",
+      "CL_CPF": "unchecked",
+      "CL_CPF_CONJUGE": "unchecked",
+      "CL_CPF_FILHOS": "unchecked",
+      "CL_CTPS": "unchecked",
+      "CL_DADOS_BANCARIOS": "unchecked",
+      "CL_FOTO_3X4": "unchecked",
+      "CL_HISTORICO_ESCOLAR": "unchecked",
+      "CL_QUALIFICACAO_PIS": "unchecked",
+      "CL_REGULARIDADE_CPF": "unchecked",
+      "CL_RESERVISTA": "unchecked",
+      "CL_RG": "unchecked",
+      "CL_TITULO_ELEITOR": "unchecked",
+      "CL_VACINACAO_FILHOS": "unchecked",
+      "COLABORADOR_CELULAR": "(11) 99999-9999",
+      "COLABORADOR_EMAIL": "joao.teste@fidelizza.com",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "COLABORADOR_TEL_RES": "(11) 99999-9999",
+      "DATA_ADMISSAO": "08/04/2026",
+      "EMERGENCIA_NOME": "JOAO TESTE",
+      "EMERGENCIA_TEL": "(11) 99999-9999",
+      "EMPRESA_NOME": "JOAO TESTE",
+      "VARIAVEL": "ok"
+    }
+  },
+  {
+    "requisicaoId": "c48e3b59-4cc5-45f9-8394-40a0dedde286",
+    "config": {
+      "template": "fidelizza_2025_declaracao_identidade_genero_html_v2",
+      "centroCusto": "c48e3b59-4cc5-45f9-8394-40a0dedde286",
+      "nomeArquivo": "fidelizza_2025_declaracao_identidade_genero_html_v2.pdf",
+      "guidArquivo": "b1794049-4eaf-4a05-bbe1-7b570c80d352"
+    },
+    "dados": {
+      "COLABORADOR_CPF": "123.456.789-00",
+      "COLABORADOR_NASCIMENTO": "mock",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "DATA_ADMISSAO": "08/04/2026",
+      "GENERO_AGENERO": "unchecked",
+      "GENERO_BIGENERO": "unchecked",
+      "GENERO_CISGENERO": "checked",
+      "GENERO_DEMIGENERO": "unchecked",
+      "GENERO_FLUIDO": "unchecked",
+      "GENERO_NAO_BINARIO": "unchecked",
+      "GENERO_TRANSGENERO": "unchecked",
+      "VARIAVEL": "ok"
+    }
+  },
+  {
+    "requisicaoId": "4a59dc20-a4eb-4820-a8de-235e16875f69",
+    "config": {
+      "template": "fidelizza_2025_declaracao_orientacao_sexual_html_v2",
+      "centroCusto": "4a59dc20-a4eb-4820-a8de-235e16875f69",
+      "nomeArquivo": "fidelizza_2025_declaracao_orientacao_sexual_html_v2.pdf",
+      "guidArquivo": "d33f8968-8393-4a80-b86b-d213fe02cb0a"
+    },
+    "dados": {
+      "COLABORADOR_CPF": "123.456.789-00",
+      "COLABORADOR_NASCIMENTO": "mock",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "DATA_ADMISSAO": "08/04/2026",
+      "ORIENT_BISEXUAL": "unchecked",
+      "ORIENT_HETERO": "checked",
+      "ORIENT_HOMO": "unchecked",
+      "ORIENT_NAO_DECLARAR": "unchecked",
+      "ORIENT_OUTROS": "unchecked",
+      "ORIENT_OUTROS_TEXTO": "unchecked",
+      "VARIAVEL": "ok"
+    }
+  },
+  {
+    "requisicaoId": "12be0a52-13fa-4f99-ba4d-ba13f2e95863",
+    "config": {
+      "template": "fidelizza_2025_formulario_4_html_v2",
+      "centroCusto": "12be0a52-13fa-4f99-ba4d-ba13f2e95863",
+      "nomeArquivo": "fidelizza_2025_formulario_4_html_v2.pdf",
+      "guidArquivo": "6029d6de-b2be-445a-9726-5a89bbb8ef49"
+    },
+    "dados": {
+      "COLABORADOR_CPF": "123.456.789-00",
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "COLAB_BAIRRO": "Alphaville",
+      "COLAB_CEP": "06460-000",
+      "COLAB_COMPLEMENTO": "27 andar",
+      "COLAB_ENDERECO": "Av. Tambore, 267",
+      "COLAB_ESTADO": "SP",
+      "COLAB_MUNICIPIO": "Barueri",
+      "COLAB_NUMERO": "267",
+      "DATA_ADMISSAO": "08/04/2026",
+      "EMPRESA_ENDERECO": "Av. Tambore, 267",
+      "EMPRESA_NOME": "JOAO TESTE",
+      "VARIAVEL": "ok",
+      "VT_BEM_BARUERI_LINHA": "unchecked",
+      "VT_BEM_BARUERI_NAO": "unchecked",
+      "VT_BEM_BARUERI_QTDE": "unchecked",
+      "VT_BEM_BARUERI_SIM": "unchecked",
+      "VT_BEM_ITAPEVI_LINHA": "unchecked",
+      "VT_BEM_ITAPEVI_NAO": "unchecked",
+      "VT_BEM_ITAPEVI_QTDE": "unchecked",
+      "VT_BEM_ITAPEVI_SIM": "unchecked",
+      "VT_BEM_JANDIRA_LINHA": "unchecked",
+      "VT_BEM_JANDIRA_NAO": "unchecked",
+      "VT_BEM_JANDIRA_QTDE": "unchecked",
+      "VT_BEM_JANDIRA_SIM": "unchecked",
+      "VT_BEM_OSASCO_LINHA": "unchecked",
+      "VT_BEM_OSASCO_NAO": "unchecked",
+      "VT_BEM_OSASCO_QTDE": "unchecked",
+      "VT_BEM_OSASCO_SIM": "unchecked",
+      "VT_BEM_STAPAR_LINHA": "unchecked",
+      "VT_BEM_STAPAR_NAO": "unchecked",
+      "VT_BEM_STAPAR_QTDE": "unchecked",
+      "VT_BEM_STAPAR_SIM": "unchecked",
+      "VT_MOV_ALTERACAO": "unchecked",
+      "VT_MOV_EXCLUSAO": "unchecked",
+      "VT_MOV_INCLUSAO": "checked",
+      "VT_NAO": "unchecked",
+      "VT_OUTROS_LINHA": "unchecked",
+      "VT_OUTROS_NAO": "unchecked",
+      "VT_OUTROS_QTDE": "unchecked",
+      "VT_OUTROS_SIM": "unchecked",
+      "VT_OUTROS_TARIFA": "unchecked",
+      "VT_PEC_LINHA": "unchecked",
+      "VT_PEC_NAO": "unchecked",
+      "VT_PEC_QTDE": "unchecked",
+      "VT_PEC_SIM": "unchecked",
+      "VT_SIM": "checked",
+      "VT_SPTRANS_LINHA": "unchecked",
+      "VT_SPTRANS_NAO": "unchecked",
+      "VT_SPTRANS_QTDE": "unchecked",
+      "VT_SPTRANS_SIM": "unchecked",
+      "VT_TOP_LINHA": "unchecked",
+      "VT_TOP_NAO": "unchecked",
+      "VT_TOP_QTDE": "unchecked",
+      "VT_TOP_SIM": "unchecked"
+    }
+  },
+  {
+    "requisicaoId": "c4e8dc42-4746-432b-8725-6930c6c023c8",
+    "config": {
+      "template": "fidelizza_2025_regras_vale_transporte_html_v2",
+      "centroCusto": "c4e8dc42-4746-432b-8725-6930c6c023c8",
+      "nomeArquivo": "fidelizza_2025_regras_vale_transporte_html_v2.pdf",
+      "guidArquivo": "3b704675-06e0-4e95-a3e5-13175fee43be"
+    },
+    "dados": {
+      "COLABORADOR_NOME": "JOAO TESTE",
+      "DATA_ADMISSAO": "08/04/2026",
+      "VARIAVEL": "ok"
+    }
+  }
+]
