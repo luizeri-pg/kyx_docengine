@@ -1,4 +1,5 @@
 using KYX.DocEngine.API.Configuration;
+using KYX.DocEngine.API.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -22,8 +23,7 @@ public class DocEngineDbContextFactory : IDesignTimeDbContextFactory<DocEngineDb
             .AddEnvironmentVariables()
             .Build();
 
-        var connectionString = config.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' não encontrada.");
+        var connectionString = ConnectionStringHelper.ResolveDefaultConnection(config);
 
         var optionsBuilder = new DbContextOptionsBuilder<DocEngineDbContext>();
         optionsBuilder.UseNpgsql(

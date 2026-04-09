@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Dapper;
+using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Models.DTOs.Documents;
 using KYX.DocEngine.API.Models.Entities;
 using Npgsql;
@@ -50,7 +51,7 @@ public class PartnerDbFunctionsService : IPartnerDbFunctionsService
 
     public PartnerDbFunctionsService(IConfiguration configuration, ILogger<PartnerDbFunctionsService> logger)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        _connectionString = ConnectionStringHelper.ResolveDefaultConnection(configuration, logger);
         _logger = logger;
     }
 

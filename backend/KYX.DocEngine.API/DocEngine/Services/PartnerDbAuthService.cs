@@ -1,5 +1,6 @@
 using Dapper;
 using KYX.DocEngine.API.Configuration;
+using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Models.DTOs.Auth;
 using KYX.DocEngine.API.Models.Entities;
 using Microsoft.Extensions.Options;
@@ -24,7 +25,7 @@ public class PartnerDbAuthService : IAuthService
         IOptions<JwtSettings> jwtSettings,
         ILogger<PartnerDbAuthService> logger)
     {
-        _connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        _connectionString = ConnectionStringHelper.ResolveDefaultConnection(configuration, logger);
         _jwtService = jwtService;
         _jwtSettings = jwtSettings.Value;
         _logger = logger;

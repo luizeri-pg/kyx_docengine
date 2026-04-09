@@ -29,7 +29,7 @@ builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, relo
 // 2) Swarm/produção: validar secrets críticos (falha cedo se ausentes)
 if (!builder.Environment.IsDevelopment())
 {
-    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+    var conn = ConnectionStringHelper.ResolveDefaultConnection(builder.Configuration);
     if (string.IsNullOrWhiteSpace(conn))
     {
         Console.Error.WriteLine(
@@ -52,7 +52,7 @@ builder.Services.Configure<SchemaTableOptions>(builder.Configuration.GetSection(
 
 builder.Services.AddDbContext<DocEngineDbContext>(options =>
     options.UseNpgsql(
-        builder.Configuration.GetConnectionString("DefaultConnection"),
+        ConnectionStringHelper.ResolveDefaultConnection(builder.Configuration),
         npgsql => npgsql.MigrationsAssembly("KYX.DocEngine.API"))
         .UseSnakeCaseNamingConvention()
         // O snapshot de migrações não espelha o mapeamento dinâmico em Schema:* (appsettings); evita falhar Migrate() em dev.
