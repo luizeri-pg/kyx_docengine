@@ -226,7 +226,14 @@ public class DocumentsController : ControllerBase
             Sucesso = true,
             RequisicaoId = request.RequisicaoId,
             TempoProcessamento = stopwatch.ElapsedMilliseconds,
-            Resultado = new GenerateDocumentResponse { JobId = guidArquivo, Status = "completed" }
+            Resultado = new GenerateDocumentResponse
+            {
+                JobId = guidArquivo,
+                Status = "completed",
+                Base64 = pdfBase64,
+                ContentType = "application/pdf",
+                NomeArquivo = request.Config.NomeArquivo
+            }
         });
         }
         catch (Exception ex)

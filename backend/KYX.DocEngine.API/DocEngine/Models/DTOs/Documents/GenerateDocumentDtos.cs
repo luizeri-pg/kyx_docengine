@@ -72,6 +72,9 @@ public class GenerateDocumentResponse
 {
     public Guid JobId { get; set; }
     public string Status { get; set; } = "queued";
+    public string? Base64 { get; set; }
+    public string ContentType { get; set; } = "application/pdf";
+    public string? NomeArquivo { get; set; }
 }
 
 /// <summary>
