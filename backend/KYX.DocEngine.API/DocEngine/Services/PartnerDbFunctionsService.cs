@@ -36,7 +36,7 @@ public interface IPartnerDbFunctionsService
         GenerateDocumentRequest request,
         string templateSlug,
         Guid guidArquivo,
-        Dictionary<string, string>? dadosOverride = null,
+        object? dadosOverride = null,
         int userId = 0,
         string? key = null);
     Task<DocumentoDbResult?> SelectDocumentoAsync(Guid id, int userId = 0, string? key = null);
@@ -118,21 +118,24 @@ public class PartnerDbFunctionsService : IPartnerDbFunctionsService
         GenerateDocumentRequest request,
         string templateSlug,
         Guid guidArquivo,
-        Dictionary<string, string>? dadosOverride = null,
+        object? dadosOverride = null,
         int userId = 0,
         string? key = null)
     {
+        var centroCustoNormalized = NormalizeUuidText(request.Config.CentroCusto);
+        var dadosPayload = dadosOverride ?? ConvertJsonElementToObject(request.Dados);
+
         var payload = new
         {
             requisicaoId = request.RequisicaoId,
             config = new
             {
                 template = templateSlug,
-                centroCusto = request.Config.CentroCusto,
+                centroCusto = centroCustoNormalized,
                 nomeArquivo = request.Config.NomeArquivo,
                 guidArquivo = guidArquivo
             },
-            dados = dadosOverride ?? request.Dados
+            dados = dadosPayload
         };
 
         await using var db = new NpgsqlConnection(_connectionString);
@@ -152,6 +155,31 @@ public class PartnerDbFunctionsService : IPartnerDbFunctionsService
         }
 
         return result;
+    }
+
+    private static object ConvertJsonElementToObject(JsonElement element)
+    {
+        return element.ValueKind switch
+        {
+            JsonValueKind.Object => element.EnumerateObject()
+                .ToDictionary(p => p.Name, p => ConvertJsonElementToObject(p.Value), StringComparer.OrdinalIgnoreCase),
+            JsonValueKind.Array => element.EnumerateArray().Select(ConvertJsonElementToObject).ToList(),
+            JsonValueKind.String => element.GetString() ?? string.Empty,
+            JsonValueKind.Number => element.TryGetInt64(out var i) ? i : element.GetDouble(),
+            JsonValueKind.True => true,
+            JsonValueKind.False => false,
+            JsonValueKind.Null => string.Empty,
+            _ => element.ToString()
+        };
+    }
+
+    private static string NormalizeUuidText(string? value)
+    {
+        var raw = (value ?? string.Empty).Trim();
+        if (Guid.TryParse(raw, out var parsed))
+            return parsed.ToString();
+
+        return TemplateIdentity.ToGuidFromSlug(raw).ToString();
     }
 
     public async Task<DocumentoDbResult?> SelectDocumentoAsync(Guid id, int userId = 0, string? key = null)

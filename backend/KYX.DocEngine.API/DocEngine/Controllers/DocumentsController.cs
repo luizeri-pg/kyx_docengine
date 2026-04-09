@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Models.DTOs;
 using KYX.DocEngine.API.Models.DTOs.Documents;
 using KYX.DocEngine.API.Models.Entities;
@@ -150,7 +151,8 @@ public class DocumentsController : ControllerBase
             });
         }
 
-        var missingFields = _templateService.ValidateRequiredFields(templateEntity, request.Dados);
+        var dadosFlat = JsonFlattenHelper.FlattenToStringDictionary(request.Dados);
+        var missingFields = _templateService.ValidateRequiredFields(templateEntity, dadosFlat);
         if (missingFields.Any())
         {
             return BadRequest(new ApiResponse<object>
@@ -187,18 +189,19 @@ public class DocumentsController : ControllerBase
             });
         }
 
-        var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, request.Dados);
+        var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, dadosFlat);
         var pdfBase64 = Convert.ToBase64String(pdfBytes);
-        var dadosPersist = new Dictionary<string, string>(request.Dados, StringComparer.OrdinalIgnoreCase)
-        {
-            ["_pdfBase64"] = pdfBase64
-        };
+        var dadosPersist = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+            request.Dados.GetRawText(),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            ?? new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        dadosPersist["_pdfBase64"] = pdfBase64;
 
         var requestToPersist = new GenerateDocumentRequest
         {
             RequisicaoId = request.RequisicaoId,
             Config = request.Config,
-            Dados = dadosPersist
+            Dados = request.Dados
         };
 
         var dbInsert = await _partnerDbFunctionsService.InsertDocumentoAsync(

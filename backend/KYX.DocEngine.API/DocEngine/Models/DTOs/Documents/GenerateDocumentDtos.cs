@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 
 namespace KYX.DocEngine.API.Models.DTOs.Documents;
 
@@ -11,7 +12,7 @@ public class GenerateDocumentRequest : IValidatableObject
     public DocumentConfig Config { get; set; } = null!;
 
     [Required]
-    public Dictionary<string, string> Dados { get; set; } = new();
+    public JsonElement Dados { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
