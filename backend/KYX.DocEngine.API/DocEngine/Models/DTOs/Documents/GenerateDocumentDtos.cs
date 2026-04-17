@@ -51,10 +51,39 @@ public class DocumentConfig
     public string? GuidArquivo { get; set; }
 
     /// <summary>
+    /// PDFs extras (cada string = PDF completo em Base64) concatenados **após** o PDF gerado pelo template,
+    /// **na ordem do array** (primeiro elemento = primeiro anexo após o corpo).
+    /// </summary>
+    public List<string>? PdfsAnexosBase64 { get; set; }
+
+    /// <summary>
+    /// PDFs anexos com <c>ordem</c> explícita (menor valor = mais cedo no documento final).
+    /// Se existir pelo menos um item com Base64 não vazio, esta lista **substitui**
+    /// <see cref="PdfsAnexosBase64"/> (útil quando a API de origem envia <c>anexosPdf[]</c> com <c>ordem</c>).
+    /// Entradas com o mesmo <c>ordem</c> mantêm a ordem de chegada no JSON.
+    /// </summary>
+    public List<PdfAnexoPayload>? PdfsAnexos { get; set; }
+
+    /// <summary>
+    /// PDF nativo (um ficheiro em Base64) fundido **no sítio** do placeholder <c>{{DOSSIE_BLOCO_INTERCALADO_HTML}}</c> no HTML
+    /// (entre as duas metades do documento). Envie <c>DOSSIE_BLOCO_INTERCALADO_HTML</c> vazio nos dados para não duplicar conteúdo.
+    /// Só aplicável a templates <c>html</c> que contenham o placeholder exacto.
+    /// </summary>
+    public string? PdfIntercaladoBase64 { get; set; }
+
+    /// <summary>
     /// Template enviado no corpo do pedido — <strong>não</strong> é persistido na tabela <c>templates</c>.
     /// Tipos: <c>html</c> ou <c>acroform</c> (conteúdo = PDF em base64).
     /// </summary>
     public InlineTemplatePayload? InlineTemplate { get; set; }
+}
+
+/// <summary>Um PDF anexo com ordenação opcional (ex.: espelho de <c>anexosPdf[].ordem</c>).</summary>
+public class PdfAnexoPayload
+{
+    public int? Ordem { get; set; }
+
+    public string? Base64 { get; set; }
 }
 
 public class InlineTemplatePayload
@@ -92,4 +121,13 @@ public class GenerateSyncPdfRequest
     public Dictionary<string, string> Dados { get; set; } = new();
 
     public string NomeArquivo { get; set; } = "documento.pdf";
+
+    /// <inheritdoc cref="DocumentConfig.PdfsAnexosBase64"/>
+    public List<string>? PdfsAnexosBase64 { get; set; }
+
+    /// <inheritdoc cref="DocumentConfig.PdfsAnexos"/>
+    public List<PdfAnexoPayload>? PdfsAnexos { get; set; }
+
+    /// <inheritdoc cref="DocumentConfig.PdfIntercaladoBase64"/>
+    public string? PdfIntercaladoBase64 { get; set; }
 }
