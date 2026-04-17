@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Dossiê probatório – Contratação Digital Simplix</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 20mm 14mm 20mm;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1a1a1a;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background: #fff;
+    }
+    /**
+     * Secções principais: quebra antes de cada bloco (exceto a primeira).
+     * Tabelas podem continuar em várias folhas; thead repete-se em cada página impressa.
+     * Rodapé com hash + "k / N": envie nos dados DOCENGINE_USE_CHROME_PAGE_FOOTER=true
+     * (HASH_DOSSIE no rodapé nativo do Chromium — sem PAGINA_TOTAL manual).
+     */
+    .dossie-section {
+      page-break-before: always;
+      position: relative;
+    }
+    .dossie-section--first {
+      page-break-before: auto;
+    }
+    .events-table thead,
+    .logs-table thead,
+    .bordered-table thead {
+      display: table-header-group;
+    }
+    .events-table tbody tr,
+    .logs-table tbody tr {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    /* ─── Header ─── */
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .header-logo { height: 42px; }
+    .header-title {
+      font-size: 20px;
+      font-weight: 400;
+      color: #1a1a1a;
+    }
+
+    /* ─── Section title with blue bar ─── */
+    .section-title {
+      font-size: 18px;
+      font-weight: 400;
+      color: #1a1a1a;
+      padding-left: 12px;
+      border-left: 5px solid #2563eb;
+      margin: 28px 0 14px;
+    }
+    .section-title:first-of-type { margin-top: 0; }
+
+    /* ─── Client block ─── */
+    .client-block {
+      display: flex;
+      gap: 28px;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+    .client-photo {
+      width: 230px;
+      min-height: 280px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #f5f5f5;
+    }
+    .client-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .client-fields {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-top: 10px;
+    }
+
+    /* ─── Field label / value ─── */
+    .field-label {
+      font-size: 15px;
+      color: #777;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .field-value {
+      font-size: 16px;
+      color: #1a1a1a;
+      font-weight: 700;
+      display: block;
+    }
+    .field-value-normal {
+      font-size: 15px;
+      color: #1a1a1a;
+      font-weight: 700;
+      display: block;
+    }
+
+    /* ─── Capture data grid ─── */
+    .capture-grid {
+      margin-top: 10px;
+    }
+    .capture-row {
+      display: flex;
+      gap: 50px;
+      margin-bottom: 10px;
+    }
+    .capture-cell { min-width: 140px; }
+
+    /* ─── Events table ─── */
+    .events-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .events-table th {
+      font-size: 14px;
+      font-weight: 400;
+      color: #555;
+      text-align: left;
+      padding: 6px 0;
+    }
+    .events-table thead tr {
+      border-bottom: 2px dotted #999;
+    }
+    .events-table td {
+      padding: 12px 6px 12px 0;
+      vertical-align: top;
+      line-height: 1.45;
+    }
+    .events-table tbody tr {
+      border-bottom: 2px dotted #bbb;
+    }
+    .events-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .events-table .col-evento { width: 22%; }
+    .events-table .col-data { width: 35%; text-align: center; }
+    .events-table .col-id { width: 43%; }
+    .events-table td:nth-child(2) { text-align: center; }
+
+    .id-line {
+      display: block;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    /* ─── Logs section ─── */
+    .logs-header {
+      margin-bottom: 8px;
+    }
+    .logs-header .field-row {
+      display: flex;
+      gap: 40px;
+      margin-top: 10px;
+    }
+    .logs-separator {
+      border: none;
+      border-top: 2px solid #333;
+      margin: 10px 0 0;
+    }
+    .logs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .logs-table th {
+      font-size: 14px;
+      font-weight: 400;
+      color: #555;
+      text-align: left;
+      padding: 8px 0;
+      border-bottom: 2px dotted #999;
+    }
+    .logs-table td {
+      padding: 8px 4px 8px 0;
+      vertical-align: top;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .logs-table tbody tr {
+      border-bottom: 2px dotted #bbb;
+    }
+    .logs-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .logs-table .col-data-log { width: 20%; text-align: center; }
+    .logs-table .col-tipo { width: 18%; text-align: center; }
+    .logs-table .col-interacao { width: 62%; }
+    .logs-table td:nth-child(1) { text-align: center; }
+    .logs-table td:nth-child(2) { text-align: center; }
+
+    /* ─── Bordered table (CCB) ─── */
+    .bordered-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+    }
+    .bordered-table th, .bordered-table td {
+      border: 1px solid #bbb;
+      padding: 5px 6px;
+      vertical-align: top;
+      text-align: left;
+    }
+    .bordered-table th {
+      background: #e8e8e8;
+      font-weight: 700;
+      font-size: 9px;
+      text-transform: uppercase;
+    }
+
+    /* ─── Legal / CCB ─── */
+    .legal-body {
+      font-size: 14px;
+      line-height: 1.65;
+      text-align: justify;
+      padding-left: 14px;
+    }
+    .legal-body p { margin: 6px 0; }
+    .legal-body h3 { font-size: 14px; font-weight: 700; margin: 12px 0 4px; text-decoration: underline; }
+    .legal-body ul { margin: 4px 0 8px 20px; }
+    .legal-body li { margin-bottom: 2px; }
+    .legal-body table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 12px; }
+    .legal-body table th, .legal-body table td { border: 1px solid #bbb; padding: 4px 6px; text-align: left; vertical-align: top; }
+    .legal-body table th { background: #eee; font-weight: 700; }
+
+    .ccb-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .ccb-header-logo { height: 36px; }
+    .ccb-header-via { font-size: 10px; font-weight: 700; text-align: right; }
+    .ccb-title {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .ccb-section-num {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 8px 0 4px;
+      border-bottom: 1px solid #bbb;
+      padding-bottom: 2px;
+    }
+    .ccb-sub-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin: 4px 0 2px;
+      color: #1a1a1a;
+    }
+
+    /* CCB bordered data table */
+    .ccb-data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+      margin-bottom: 4px;
+    }
+    .ccb-data td {
+      border: 1px solid #999;
+      padding: 2px 5px;
+      vertical-align: top;
+      line-height: 1.35;
+    }
+    .ccb-data .lbl {
+      font-size: 8.5px;
+      color: #555;
+      display: block;
+    }
+    .ccb-data .val {
+      font-size: 10px;
+      color: #1a1a1a;
+      font-weight: 400;
+      display: block;
+    }
+    .ccb-data .val-bold {
+      font-size: 10px;
+      color: #1a1a1a;
+      font-weight: 700;
+      display: block;
+    }
+
+    .ccb-ops {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 9.5px;
+      margin-bottom: 4px;
+    }
+    .ccb-ops td {
+      border: 1px solid #999;
+      padding: 2px 5px;
+      vertical-align: top;
+      line-height: 1.35;
+    }
+    .ccb-ops .lbl { font-size: 8px; color: #555; display: block; }
+    .ccb-ops .val { font-size: 9.5px; display: block; }
+
+    .ccb-footer-via {
+      font-size: 7.5px;
+      color: #333;
+      border-top: 1px solid #ccc;
+      padding-top: 4px;
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .ccb-footer-via-right { text-align: right; }
+
+    /* ─── Images ─── */
+    .img-container {
+      margin-top: 8px;
+    }
+    .img-container img {
+      max-width: 100%;
+      max-height: 420px;
+      display: block;
+    }
+    .img-doc-container {
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 180px;
+      margin-bottom: 10px;
+    }
+    .img-doc-container img {
+      max-width: 100%;
+      max-height: 480px;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <!-- Rodapé hash + página/total: envie nos dados DOCENGINE_USE_CHROME_PAGE_FOOTER=true (HASH_DOSSIE). Sem isto não há rodapé numérico. -->
+
+  <!-- ═══ Dados do Cliente + Captura + Trilha (tabela pode continuar em várias folhas) ═══ -->
+  <div class="dossie-section dossie-section--first">
+    <div class="header">
+      <!-- LOGO_SIMPLIX_BASE64: envie data URI (data:image/png;base64,...) ou só o Base64 da imagem (PNG/JPEG/WebP/GIF). -->
+      <img class="header-logo" src="{{LOGO_SIMPLIX_BASE64}}" alt="Simplix" />
+      <span class="header-title">Dossiê probatório – Contratação Digital Simplix</span>
+    </div>
+
+    <div class="section-title">Dados do cliente</div>
+    <div class="client-block">
+      <div class="client-photo">
+        <img src="{{IMG_CLIENTE_FOTO}}" alt="Foto do cliente" />
+      </div>
+      <div class="client-fields">
+        <div>
+          <span class="field-label">Nome do cliente</span>
+          <span class="field-value">{{CLIENTE_NOME}}</span>
+        </div>
+        <div>
+          <span class="field-label">CPF</span>
+          <span class="field-value">{{CLIENTE_CPF}}</span>
+        </div>
+        <div>
+          <span class="field-label">Data de Nascimento</span>
+          <span class="field-value">{{CLIENTE_NASCIMENTO}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Dados da captura</div>
+    <div class="capture-grid">
+      <div class="capture-row">
+        <div class="capture-cell">
+          <span class="field-label">Data e Hora</span>
+          <span class="field-value-normal">{{CAPTURA_DATA_HORA}}</span>
+        </div>
+        <div class="capture-cell">
+          <span class="field-label">Latitude</span>
+          <span class="field-value-normal">{{CAPTURA_LATITUDE}}</span>
+        </div>
+        <div class="capture-cell">
+          <span class="field-label">Longitude</span>
+          <span class="field-value-normal">{{CAPTURA_LONGITUDE}}</span>
+        </div>
+      </div>
+      <div class="capture-row">
+        <div class="capture-cell">
+          <span class="field-label">IP</span>
+          <span class="field-value-normal">{{CAPTURA_IP}}</span>
+        </div>
+        <div class="capture-cell">
+          <span class="field-label">Porta Lógica</span>
+          <span class="field-value-normal">{{CAPTURA_PORTA}}</span>
+        </div>
+      </div>
+      <div>
+        <span class="field-label">Modelo/OS</span>
+        <span class="field-value-normal">{{CAPTURA_MODELO_OS}}</span>
+      </div>
+    </div>
+
+    <div class="section-title">Trilha de eventos</div>
+    <table class="events-table">
+      <thead>
+        <tr>
+          <th class="col-evento">Evento</th>
+          <th class="col-data">Data e hora (GMT)</th>
+          <th class="col-id">Identificação</th>
+        </tr>
+      </thead>
+      <tbody>{{EVENTOS_HTML}}</tbody>
+    </table>
+  </div>
+
+  <!-- ═══ Logs das integrações ═══ -->
+  <div class="dossie-section">
+    <div class="section-title" style="margin-top:0;">Logs das integrações com o cliente</div>
+
+    <div class="logs-header">
+      <div>
+        <span class="field-label">Nome do cliente</span>
+        <span class="field-value">{{CLIENTE_NOME}}</span>
+      </div>
+      <div class="field-row" style="display:flex;gap:40px;margin-top:10px;">
+        <div>
+          <span class="field-label">Protocolo de atendimento</span>
+          <span class="field-value-normal">{{PROTOCOLO_ATENDIMENTO}}</span>
+        </div>
+        <div>
+          <span class="field-label">Data e hora início atendimento</span>
+          <span class="field-value-normal">{{ATENDIMENTO_INICIO}}</span>
+        </div>
+      </div>
+    </div>
+
+    <hr class="logs-separator" />
+
+    <table class="logs-table">
+      <thead>
+        <tr>
+          <th class="col-data-log">Data e hora (GMT)</th>
+          <th class="col-tipo">Tipo</th>
+          <th class="col-interacao">Interação</th>
+        </tr>
+      </thead>
+      <tbody>{{INTERACOES_HTML}}</tbody>
+    </table>
+  </div>
+
+  <!-- Termos e CCB vêm só em PDF (anexosPdf → config.pdfsAnexos ou pdfsAnexosBase64), não neste HTML. -->
+
+  <!-- ═══ Prova de vida ═══ Nome nesta secção: {{PROVA_VIDA_NOME}} (pode coincidir com CLIENTE_NOME ou vir do payload provaDeVida.nome). -->
+  <div class="dossie-section">
+    <div class="section-title" style="margin-top:0;">Prova de vida</div>
+    <div style="margin-bottom:10px;">
+      <span class="field-label">Nome do cliente</span>
+      <span class="field-value">{{PROVA_VIDA_NOME}}</span>
+    </div>
+    <div class="img-container">
+      <img src="{{IMG_SELFIE}}" alt="Prova de vida" />
+    </div>
+  </div>
+
+  <!-- ═══ Documentos ═══ -->
+  <div class="dossie-section">
+    <div class="section-title" style="margin-top:0;">Documentos</div>
+    <p style="font-weight:700;margin-bottom:10px;">{{DOCUMENTO_TIPO}}</p>
+    <div class="img-doc-container"><img src="{{IMG_DOCUMENTO_FRENTE}}" alt="Documento frente" /></div>
+    <div class="img-doc-container"><img src="{{IMG_DOCUMENTO_VERSO}}" alt="Documento verso" /></div>
+  </div>
+
+</body>
+</html>

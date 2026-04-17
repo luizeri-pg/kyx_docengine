@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "descricao": "Mock de payload estruturado para o dossiê Simplix (dados fictícios).",
+    "versaoContrato": "1",
+    "uso": "Converter com docs/scripts/estrutura-dossie-to-flat-dados.mjs (buildTemplateDadosFromEstrutura + buildPdfsAnexosTermosPoliticaECcb). Juntar com chaves CCB/termos/logo de docs/templates/dossie-simplix-template-dados.sem-imagens.json para satisfazer os 72 requiredFields do template dossie-simplix. Gravar template: POST /templates com corpo em docs/preview/template-dossie-simplix-upsert.json (gerado por node docs/scripts/build-template-dossie-upsert-payload.mjs). Remover meta antes do POST de documentos."
+  },
+  "cliente": {
+    "ordem": 1,
+    "nome": "João Pedro Almeida Santos",
+    "cpf": "390.533.447-05",
+    "nascimento": "22/07/1991",
+    "fotoBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+  },
+  "captura": {
+    "ordem": 2,
+    "dataHora": "16/04/2026 09:15:33",
+    "latitude": "-22.906847",
+    "longitude": "-43.172896",
+    "ip": "177.12.34.56",
+    "porta": "60412",
+    "modeloOs": "iOS 17.2; iPhone 14",
+    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+  },
+  "trilhaEventos": {
+    "ordem": 3,
+    "eventos": [
+      {
+        "evento": "Saudação",
+        "dataHoraHtml": "16/04/2026<br>09:10:00 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      },
+      {
+        "evento": "Opt-In Termos E Políticas",
+        "dataHoraHtml": "16/04/2026<br>09:10:22 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      },
+      {
+        "evento": "Captura De Documento",
+        "dataHoraHtml": "16/04/2026<br>09:12:01 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      },
+      {
+        "evento": "Documento Aprovado",
+        "dataHoraHtml": "16/04/2026<br>09:12:45 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      },
+      {
+        "evento": "Captura Liveness",
+        "dataHoraHtml": "16/04/2026<br>09:14:10 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      },
+      {
+        "evento": "Processamento Dossiê",
+        "dataHoraHtml": "16/04/2026<br>09:16:00 (-03:00)",
+        "identificacao": "IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1"
+      }
+    ]
+  },
+  "logsInteracao": {
+    "ordem": 4,
+    "protocolo": "8da24334-17a7-4950-94af-507260c8e97c",
+    "dataHoraInicio": "16/04/2026 09:10:00",
+    "registros": [
+      {
+        "dataHoraHtml": "16/04/2026<br>09:10:00",
+        "tipo": "",
+        "interacaoHtml": "Bem-vindo, João! Inicie a jornada de formalização da sua antecipação de saque aniversário do FGTS. Para iniciarmos, clique em <b>Começar</b>."
+      },
+      {
+        "dataHoraHtml": "16/04/2026<br>09:10:18",
+        "tipo": "Cliente",
+        "interacaoHtml": "COMEÇAR"
+      },
+      {
+        "dataHoraHtml": "16/04/2026<br>09:12:40",
+        "tipo": "Sistema",
+        "interacaoHtml": "Documento aprovado automaticamente."
+      }
+    ]
+  },
+  "anexosPdf": [
+    {
+      "ordem": 5,
+      "rotulo": "Termos / Política",
+      "base64": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAyOSA+PgpzdHJlYW0KcSAxIDEgMSByZyAwIDAgNjEyIDc5MiByZSBmIFEKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMDggMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA1IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyODcKJSVFT0YK"
+    },
+    {
+      "ordem": 6,
+      "rotulo": "CCB",
+      "base64": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAyOSA+PgpzdHJlYW0KcSAxIDEgMSByZyAwIDAgNjEyIDc5MiByZSBmIFEKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMDggMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA1IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyODcKJSVFT0YK"
+    },
+    {
+      "ordem": 7,
+      "rotulo": "Prova de Vida",
+      "dadosCliente": {
+        "nome": "João Pedro Almeida Santos"
+      },
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    },
+    {
+      "ordem": 8,
+      "rotulo": "CNH",
+      "tipo": "CNH",
+      "base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  ],
+  "hashDossie": "f0e1d2c3b4a59687766554433221100fedcba9876543210fedcba9876543210",
+  "docengineUseChromePageFooter": "true"
+}
