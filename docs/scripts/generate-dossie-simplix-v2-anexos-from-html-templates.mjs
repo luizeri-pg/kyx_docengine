@@ -1,16 +1,24 @@
 #!/usr/bin/env node
 /**
  * Dossiê principal: slug dossie-simplix-v2 (HTML template-dossie-simplix.html).
- * anexosPdf: cada entrada é um PDF gerado a partir de outro template HTML (Fidelizza, books, etc.).
  *
- * Fluxo:
+ * Em produção o caso típico é dados.anexosPdf[] com PDF **já** em base64 (origem qualquer: ERP, storage, etc.).
+ * A API funde esses bytes após o corpo e carimba em cada página de anexo o HASH_DOSSIE + "página / total"
+ * global (PdfDossieAnnexFooterStamper), desde que os dados incluam HASH_DOSSIE (ou hashDossie) e
+ * DOCENGINE_USE_CHROME_PAGE_FOOTER=true (ou docengineUseChromePageFooter).
+ *
+ * Este script é só um kit de demonstração: gera anexos via HTML→POST /documents/generate-sync para encher
+ * anexosPdf com base64 + hashSha256 opcional, depois POST /documents/generate.
+ *
+ * Fluxo do script:
  *   1) Lê docs/preview/mock-kit/dossie-simplix-api-request.mock.json
- *   2) Para cada HTML de anexo, POST /documents/generate-sync → base64 PDF
- *   3) Substitui dados.anexosPdf por esses PDFs (com hashSha256)
+ *   2) Para cada HTML de anexo, POST /documents/generate-sync → base64 PDF (rodapé Chromium desligado nos
+ *      anexos para não duplicar o carimbo pós-merge)
+ *   3) Substitui dados.anexosPdf por esses PDFs
  *   4) Grava o pedido JSON e (opcional) POST /documents/generate
  *
  * Pré-requisitos: API em Development, DevFileTemplateFallback=true, SkipPartnerDocumentoPersist opcional,
- * Documents:AllowSyncPdfGeneration=true (para o passo sync dos anexos).
+ * Documents:AllowSyncPdfGeneration=true (só necessário para o passo sync de demonstração com HTML).
  *
  * Uso:
  *   DOCENGINE_USERNAME=docengine.demo DOCENGINE_PASSWORD='…' \

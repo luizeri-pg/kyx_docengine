@@ -5,10 +5,12 @@ using PdfSharp.Pdf.IO;
 namespace KYX.DocEngine.API.Helpers;
 
 /// <summary>
-/// O rodapé do Chromium (<c>FooterTemplate</c>) só cobre o PDF gerado a partir do HTML.
-/// Os PDFs em <c>config.pdfsAnexos*</c> / <c>anexosPdf</c> são concatenados depois, sem esse rodapé.
-/// Quando <c>DOCENGINE_USE_CHROME_PAGE_FOOTER</c> está activo e existe <c>HASH_DOSSIE</c>,
-/// desenhamos hash + numeração global (página / total do PDF final) nas páginas dos anexos.
+/// O rodapé do Chromium (<c>FooterTemplate</c>) só cobre o PDF gerado a partir do HTML do template principal.
+/// Os PDFs nativos concatenados a seguir — via <c>config.pdfsAnexos*</c> ou via <c>dados.anexosPdf[]</c> no payload
+/// estruturado do dossiê — não passam pelo Chromium; a origem (HTML pré-renderizado, scanner, outro sistema) é irrelevante.
+/// Quando <c>DOCENGINE_USE_CHROME_PAGE_FOOTER</c> está activo e existe <c>HASH_DOSSIE</c> (ou alias normalizado
+/// <c>hashDossie</c> em <see cref="DossieEstruturadaMapper.NormalizeBrandingForGenerate"/>),
+/// desenhamos hash + numeração global (página / total do PDF final) no rodapé de <strong>cada página só dos anexos</strong>.
 /// </summary>
 public static class PdfDossieAnnexFooterStamper
 {

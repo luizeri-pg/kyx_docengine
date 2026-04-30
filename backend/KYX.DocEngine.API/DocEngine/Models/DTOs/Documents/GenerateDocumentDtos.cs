@@ -53,6 +53,9 @@ public class DocumentConfig
     /// <summary>
     /// PDFs extras (cada string = PDF completo em Base64) concatenados **após** o PDF gerado pelo template,
     /// **na ordem do array** (primeiro elemento = primeiro anexo após o corpo).
+    /// PDF nativo não recebe rodapé Chromium; com <c>HASH_DOSSIE</c> + <c>DOCENGINE_USE_CHROME_PAGE_FOOTER</c> nos dados,
+    /// o serviço carimba hash e numeração global nas páginas dos anexos (ver <c>PdfDossieAnnexFooterStamper</c>).
+    /// O mesmo vale para <c>dados.anexosPdf[]</c> no payload estruturado do dossiê, mapeado para esta lista.
     /// </summary>
     public List<string>? PdfsAnexosBase64 { get; set; }
 

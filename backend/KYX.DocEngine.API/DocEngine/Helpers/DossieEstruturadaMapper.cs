@@ -33,6 +33,9 @@ public static class DossieEstruturadaMapper
 
     /// <summary>
     /// Tenta converter <paramref name="dados"/> aninhado em chaves planas + PDFs de <c>anexosPdf</c>.
+    /// Cada item com <c>base64</c> é um PDF nativo (bytes), não HTML; após o merge no controlador,
+    /// <see cref="PdfDossieAnnexFooterStamper"/> carimba hash + página/total nessas páginas quando o pedido
+    /// inclui <c>HASH_DOSSIE</c> e <c>DOCENGINE_USE_CHROME_PAGE_FOOTER</c> (ou aliases normalizados).
     /// </summary>
     public static bool TryResolve(
         JsonElement dados,
