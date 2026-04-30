@@ -60,6 +60,8 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
     /// Se <c>true</c> (valores como 1, true, yes, sim), o PDF usa o rodapé nativo do Chromium com
     /// <see cref="PuppeteerSharp.PdfOptions.FooterTemplate"/> — numeração <c>página / total</c> automática.
     /// O hash do dossiê vem de <c>HASH_DOSSIE</c>. Chave reservada: não coloque <c>{{DOCENGINE_USE_CHROME_PAGE_FOOTER}}</c> no HTML.
+    /// PDFs anexados depois (<c>pdfsAnexos</c>) não passam pelo Chromium; o <c>DocumentsController</c> carimba essas páginas
+    /// com o mesmo hash e numeração global via <see cref="KYX.DocEngine.API.Helpers.PdfDossieAnnexFooterStamper"/>.
     /// </summary>
     public const string DocengineChromePageFooterKey = "DOCENGINE_USE_CHROME_PAGE_FOOTER";
 

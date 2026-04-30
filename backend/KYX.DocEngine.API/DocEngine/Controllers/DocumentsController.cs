@@ -109,7 +109,9 @@ public class DocumentsController : ControllerBase
             }
 
             var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, dadosSync, pdfIntercaladoSync);
+            var mainPdfPageCount = PdfDossieAnnexFooterStamper.GetPdfPageCount(pdfBytes);
             pdfBytes = AppendAnnexPdfs(pdfBytes, ResolveAnnexPdfsOrdered(request.PdfsAnexos, request.PdfsAnexosBase64));
+            pdfBytes = PdfDossieAnnexFooterStamper.StampAnnexPagesIfApplicable(pdfBytes, mainPdfPageCount, dadosSync);
             var nome = string.IsNullOrWhiteSpace(request.NomeArquivo) ? "documento.pdf" : request.NomeArquivo;
 
             return Ok(new ApiResponse<DocumentResult>
@@ -270,6 +272,7 @@ public class DocumentsController : ControllerBase
         }
 
         var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, dadosFlat, pdfIntercaladoGen);
+        var mainPdfPageCount = PdfDossieAnnexFooterStamper.GetPdfPageCount(pdfBytes);
         var annexFromConfig = ResolveAnnexPdfsOrdered(request.Config.PdfsAnexos, request.Config.PdfsAnexosBase64);
         if (annexFromConfig == null || annexFromConfig.Count == 0)
         {
@@ -284,6 +287,7 @@ public class DocumentsController : ControllerBase
         }
 
         pdfBytes = AppendAnnexPdfs(pdfBytes, annexFromConfig);
+        pdfBytes = PdfDossieAnnexFooterStamper.StampAnnexPagesIfApplicable(pdfBytes, mainPdfPageCount, dadosFlat);
         var pdfBase64 = Convert.ToBase64String(pdfBytes);
         var dadosPersist = JsonSerializer.Deserialize<Dictionary<string, object?>>(
             request.Dados.GetRawText(),
