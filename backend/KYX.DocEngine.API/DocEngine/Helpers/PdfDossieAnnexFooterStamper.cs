@@ -50,12 +50,12 @@ public static class PdfDossieAnnexFooterStamper
             return mergedPdf;
         }
 
-        if (!dados.TryGetValue(ChromeFooterKey, out var footerFlag) || !IsTruthyChromeFooterFlag(footerFlag))
+        if (!TryGetChromeFooterFlag(dados, out var footerFlag) || !IsTruthyChromeFooterFlag(footerFlag))
         {
             return mergedPdf;
         }
 
-        if (!dados.TryGetValue(HashDossieKey, out var hashRaw) || string.IsNullOrWhiteSpace(hashRaw))
+        if (!TryGetHashDossie(dados, out var hashRaw))
         {
             return mergedPdf;
         }
@@ -130,6 +130,44 @@ public static class PdfDossieAnnexFooterStamper
         {
             return mergedPdf;
         }
+    }
+
+    /// <summary>Chave canónica e aliases usados em JSON achatado ou aninhado.</summary>
+    private static bool TryGetHashDossie(IReadOnlyDictionary<string, string> dados, out string value)
+    {
+        foreach (var key in new[] { HashDossieKey, "hashDossie", "hash_dossie", "dados.hashDossie", "dados.hash_dossie" })
+        {
+            if (dados.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v))
+            {
+                value = v;
+                return true;
+            }
+        }
+
+        value = "";
+        return false;
+    }
+
+    private static bool TryGetChromeFooterFlag(IReadOnlyDictionary<string, string> dados, out string value)
+    {
+        foreach (var key in new[]
+                 {
+                     ChromeFooterKey,
+                     "docengineUseChromePageFooter",
+                     "docengine_use_chrome_page_footer",
+                     "dados.docengineUseChromePageFooter",
+                     "dados.docengine_use_chrome_page_footer"
+                 })
+        {
+            if (dados.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v))
+            {
+                value = v;
+                return true;
+            }
+        }
+
+        value = "";
+        return false;
     }
 
     private static bool IsTruthyChromeFooterFlag(string? value)

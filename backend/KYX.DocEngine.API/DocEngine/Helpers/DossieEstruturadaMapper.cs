@@ -364,7 +364,45 @@ public static class DossieEstruturadaMapper
             flat["DOSSIE_HEADER_TITULO"] = DefaultHeaderTitulo;
         }
 
+        SyncHashDossieAndChromeFooterAliases(flat);
+
         SyncLegacyLogoSimplixAlias(flat);
+    }
+
+    /// <summary>
+    /// Payloads achatados ou parceiros enviam <c>hashDossie</c> / <c>docengineUseChromePageFooter</c>;
+    /// o motor e o carimbo de anexos usam <c>HASH_DOSSIE</c> e <c>DOCENGINE_USE_CHROME_PAGE_FOOTER</c>.
+    /// </summary>
+    private static void SyncHashDossieAndChromeFooterAliases(Dictionary<string, string> flat)
+    {
+        static string Get(Dictionary<string, string> d, string key) =>
+            d.TryGetValue(key, out var v) ? v : "";
+
+        if (string.IsNullOrWhiteSpace(Get(flat, "HASH_DOSSIE")))
+        {
+            var h = FirstNonEmpty(
+                Get(flat, "hashDossie"),
+                Get(flat, "hash_dossie"),
+                Get(flat, "dados.hashDossie"),
+                Get(flat, "dados.hash_dossie"));
+            if (!string.IsNullOrWhiteSpace(h))
+            {
+                flat["HASH_DOSSIE"] = h;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(Get(flat, "DOCENGINE_USE_CHROME_PAGE_FOOTER")))
+        {
+            var f = FirstNonEmpty(
+                Get(flat, "docengineUseChromePageFooter"),
+                Get(flat, "docengine_use_chrome_page_footer"),
+                Get(flat, "dados.docengineUseChromePageFooter"),
+                Get(flat, "dados.docengine_use_chrome_page_footer"));
+            if (!string.IsNullOrWhiteSpace(f))
+            {
+                flat["DOCENGINE_USE_CHROME_PAGE_FOOTER"] = f;
+            }
+        }
     }
 
     /// <summary>
