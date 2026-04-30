@@ -363,6 +363,31 @@ public static class DossieEstruturadaMapper
         {
             flat["DOSSIE_HEADER_TITULO"] = DefaultHeaderTitulo;
         }
+
+        SyncLegacyLogoSimplixAlias(flat);
+    }
+
+    /// <summary>
+    /// Templates antigos em <c>tb_template</c> ainda declaram <c>LOGO_SIMPLIX_BASE64</c> em <c>requiredFields</c>
+    /// enquanto o HTML novo usa <c>{{LOGO}}</c>. Espelha o valor para satisfazer validação e placeholders legados.
+    /// </summary>
+    private static void SyncLegacyLogoSimplixAlias(Dictionary<string, string> flat)
+    {
+        static string Get(Dictionary<string, string> d, string key) =>
+            d.TryGetValue(key, out var v) ? v : "";
+
+        var logo = Get(flat, "LOGO");
+        var legacy = Get(flat, "LOGO_SIMPLIX_BASE64");
+
+        if (!string.IsNullOrWhiteSpace(logo) && string.IsNullOrWhiteSpace(legacy))
+        {
+            flat["LOGO_SIMPLIX_BASE64"] = logo;
+        }
+        else if (!string.IsNullOrWhiteSpace(legacy) && string.IsNullOrWhiteSpace(logo))
+        {
+            flat["LOGO"] = NormalizeImageDataUri(legacy);
+            flat["LOGO_SIMPLIX_BASE64"] = flat["LOGO"];
+        }
     }
 
     private static void ApplyDocumentoIdentificacao(JsonElement doc, Dictionary<string, string> outDict)

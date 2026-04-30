@@ -67,6 +67,7 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
     private static readonly HashSet<string> ImageSrcKeysAllowRawBase64 = new(StringComparer.OrdinalIgnoreCase)
     {
         "LOGO",
+        "LOGO_SIMPLIX_BASE64",
         "IMG_CLIENTE_FOTO",
         "IMG_SELFIE",
         "IMG_DOCUMENTO_FRENTE",

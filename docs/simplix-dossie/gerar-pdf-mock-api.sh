@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Gera o PDF do dossiê com o mock estruturado.
-# 1) Tenta POST /documents/generate com template dossie-simplix-v2 (HTML na BD).
+# 1) Tenta POST /documents/generate com template dossie-simplix-v3 (HTML na BD).
 # 2) Se falhar (ex.: ins_documento), usa POST /documents/generate-sync (HTML local).
 #
 # A API tem de estar a correr (ex.: porta 3000). generate-sync exige Documents:AllowSyncPdfGeneration=true (Development).
@@ -34,7 +34,7 @@ if [[ "${SKIP_TEMPLATE_API:-}" == "1" ]]; then
   PDF="$ROOT/docs/preview/dossie-estrutura-mock-api.pdf"
 else
   node docs/scripts/post-dossie-estrutura-generate-sync.mjs \
-    --template-slug dossie-simplix-v2 \
+    --template-slug dossie-simplix-v3 \
     --request-out "$REQ_POST" \
     --estrutura-out "$REQ_BD" \
     --out-pdf "$PDF"

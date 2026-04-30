@@ -1,7 +1,7 @@
 {
   "requisicaoId": "a9f3c2e1-0b4d-4c8a-9f21-7e6d5c4b3a02",
   "config": {
-    "template": "dossie-simplix-v2",
+    "template": "dossie-simplix-v3",
     "centroCusto": "DEMO",
     "nomeArquivo": "dossie-simplix-mock.pdf"
   },

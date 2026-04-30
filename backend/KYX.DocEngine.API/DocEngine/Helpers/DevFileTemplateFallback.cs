@@ -13,6 +13,7 @@ public static class DevFileTemplateFallback
         new(StringComparer.OrdinalIgnoreCase)
         {
             ["dossie-simplix-v2"] = "../../docs/templates/template-dossie-simplix.html",
+            ["dossie-simplix-v3"] = "../../docs/templates/template-dossie-simplix.html",
             ["dossie-simplix"] = "../../docs/templates/template-dossie-simplix.html",
             ["simplix-dossie"] = "../../docs/templates/template-dossie-simplix.html"
         };

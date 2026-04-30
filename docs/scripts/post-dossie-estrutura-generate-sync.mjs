@@ -3,7 +3,7 @@
  * Sem --template-slug: converte payload estruturado → dados planos + pdfsAnexos e chama
  * POST /documents/generate-sync (motor HTML→PDF local).
  *
- * Com --template-slug (ex. dossie-simplix-v2): envia POST /documents/generate com **dados aninhados**
+ * Com --template-slug (ex. dossie-simplix-v3): envia POST /documents/generate com **dados aninhados**
  * (o DocEngine mapeia no servidor). Referência manual do corpo: docs/preview/mock-kit/dossie-simplix-api-request.mock.json
  *
  * Por defeito grava o último pedido em docs/preview/mock-kit/dossie-simplix-api-request.last-run.json
