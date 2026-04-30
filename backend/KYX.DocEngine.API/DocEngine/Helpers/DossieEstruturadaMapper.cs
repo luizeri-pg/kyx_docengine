@@ -17,6 +17,9 @@ public static class DossieEstruturadaMapper
     private const string DefaultLogoDataUri =
         "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
 
+    /// <summary>Título do cabeçalho no HTML do dossiê (<c>{{DOSSIE_HEADER_TITULO}}</c>) quando o pedido não envia um.</summary>
+    public const string DefaultHeaderTitulo = "Dossiê probatório – Contratação Digital Simplix";
+
     /// <summary>
     /// Caminho relativo ao ContentRoot (repo: <c>docs/templates/...</c>).
     /// </summary>
@@ -57,9 +60,14 @@ public static class DossieEstruturadaMapper
 
             StripCcbCredEmitCorrespIfNoStructuredCcb(dados, flat);
 
-            if (string.IsNullOrWhiteSpace(flat.GetValueOrDefault("LOGO_SIMPLIX_BASE64")))
+            if (string.IsNullOrWhiteSpace(flat.GetValueOrDefault("LOGO")))
             {
-                flat["LOGO_SIMPLIX_BASE64"] = DefaultLogoDataUri;
+                flat["LOGO"] = DefaultLogoDataUri;
+            }
+
+            if (string.IsNullOrWhiteSpace(flat.GetValueOrDefault("DOSSIE_HEADER_TITULO")))
+            {
+                flat["DOSSIE_HEADER_TITULO"] = DefaultHeaderTitulo;
             }
 
             pdfsFromAnexos = BuildPdfsAnexosForApi(dados);
@@ -256,6 +264,8 @@ public static class DossieEstruturadaMapper
         FillFromAnexosPdfDeclarative(e, outDict);
         FillRasterImagesFromAnexosByOrder(e, outDict);
 
+        ApplyBrandingFromStructuredPayload(e, outDict);
+
         if (TryGetPropertyIgnoreCase(e, "templateExtras", out var tex) && tex.ValueKind == JsonValueKind.Object)
         {
             MergeExtras(tex, outDict);
@@ -271,6 +281,88 @@ public static class DossieEstruturadaMapper
             GetStringDirect(e, "termosPoliticaHtml", "termosPoliticaHTML", "termos_politica_html", "termoPoliticaHtml"));
 
         return outDict;
+    }
+
+    private static void ApplyBrandingFromStructuredPayload(JsonElement e, Dictionary<string, string> outDict)
+    {
+        var logo = FirstNonEmpty(
+            GetStringDirect(e, "logoBase64", "logo", "logoSimplixBase64"),
+            GetMarcaString(e, "logoBase64", "logo"));
+        if (!string.IsNullOrWhiteSpace(logo))
+        {
+            outDict["LOGO"] = NormalizeImageDataUri(logo);
+        }
+
+        var titulo = FirstNonEmpty(
+            GetStringDirect(e, "titulo", "tituloDossie", "tituloCabecalho", "headerTitulo"),
+            GetMarcaString(e, "titulo", "tituloDossie", "tituloCabecalho"));
+        if (!string.IsNullOrWhiteSpace(titulo))
+        {
+            outDict["DOSSIE_HEADER_TITULO"] = titulo;
+        }
+    }
+
+    private static string GetMarcaString(JsonElement e, params string[] names)
+    {
+        if (!TryGetPropertyIgnoreCase(e, "marca", out var marca) || marca.ValueKind != JsonValueKind.Object)
+        {
+            return "";
+        }
+
+        return GetString(marca, names);
+    }
+
+    /// <summary>
+    /// Reconhece alias de logo/título no dicionário já achatado e garante cabeçalho quando o título está vazio.
+    /// </summary>
+    public static void NormalizeBrandingForGenerate(Dictionary<string, string> flat)
+    {
+        static string Get(Dictionary<string, string> d, string key) =>
+            d.TryGetValue(key, out var v) ? v : "";
+
+        if (!string.IsNullOrWhiteSpace(Get(flat, "titulo")) &&
+            string.IsNullOrWhiteSpace(Get(flat, "DOSSIE_HEADER_TITULO")))
+        {
+            flat["DOSSIE_HEADER_TITULO"] = flat["titulo"];
+        }
+
+        foreach (var alias in new[] { "logoBase64", "logo", "logoSimplixBase64" })
+        {
+            var v = Get(flat, alias);
+            if (!string.IsNullOrWhiteSpace(v) && string.IsNullOrWhiteSpace(Get(flat, "LOGO")))
+            {
+                flat["LOGO"] = NormalizeImageDataUri(v);
+                break;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(Get(flat, "DOSSIE_HEADER_TITULO")))
+        {
+            var nestedTitulo = FirstNonEmpty(
+                Get(flat, "marca.titulo"),
+                Get(flat, "marca.tituloDossie"),
+                Get(flat, "marca.tituloCabecalho"));
+            if (!string.IsNullOrWhiteSpace(nestedTitulo))
+            {
+                flat["DOSSIE_HEADER_TITULO"] = nestedTitulo;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(Get(flat, "LOGO")))
+        {
+            var nestedLogo = FirstNonEmpty(
+                Get(flat, "marca.logoBase64"),
+                Get(flat, "marca.logo"));
+            if (!string.IsNullOrWhiteSpace(nestedLogo))
+            {
+                flat["LOGO"] = NormalizeImageDataUri(nestedLogo);
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(Get(flat, "DOSSIE_HEADER_TITULO")))
+        {
+            flat["DOSSIE_HEADER_TITULO"] = DefaultHeaderTitulo;
+        }
     }
 
     private static void ApplyDocumentoIdentificacao(JsonElement doc, Dictionary<string, string> outDict)
@@ -528,6 +620,10 @@ public static class DossieEstruturadaMapper
         {
             mime = "image/gif";
         }
+        else if (compact.StartsWith("UklGR", StringComparison.Ordinal))
+        {
+            mime = "image/webp";
+        }
 
         return $"data:{mime};base64,{compact}";
     }
@@ -563,7 +659,8 @@ public static class DossieEstruturadaMapper
 
         return c.StartsWith("iVBOR", StringComparison.Ordinal) ||
                c.StartsWith("/9j/", StringComparison.Ordinal) ||
-               c.StartsWith("R0lGOD", StringComparison.Ordinal);
+               c.StartsWith("R0lGOD", StringComparison.Ordinal) ||
+               c.StartsWith("UklGR", StringComparison.Ordinal);
     }
 
     private static string StripPdfDataUriToBase64(string? s)

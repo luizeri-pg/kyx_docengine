@@ -48,6 +48,13 @@ coverage/
 *.tmp
 *.temp
 
+# JSON de exemplo do dossiê com imagens em Base64 (~4 MB)
+docs/preview/dossie-simplix-template-dados.json
+docs/preview/dossie-simplix-generate-sync.request.json
+docs/preview/mock-kit/dossie-simplix-api-request.full.json
+docs/preview/mock-kit/dossie-simplix-api-request.last-run.json
+docs/preview/mock-kit/dossie-simplix-api-request.last-run-sync.request.json
+
 
 # Python virtual environment
 .venv-pdf/

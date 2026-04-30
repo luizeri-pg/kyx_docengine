@@ -1,9 +1,15 @@
 #!/usr/bin/env node
 /**
- * Converte payload estruturado (equipa) → dados planos + anexos PDF,
- * e chama POST /documents/generate-sync (motor HTML→PDF, sem gravar document_jobs).
+ * Sem --template-slug: converte payload estruturado → dados planos + pdfsAnexos e chama
+ * POST /documents/generate-sync (motor HTML→PDF local).
  *
- * Pré-requisitos: API com Documents:AllowSyncPdfGeneration=true (Development por defeito).
+ * Com --template-slug (ex. dossie-simplix-v2): envia POST /documents/generate com **dados aninhados**
+ * (o DocEngine mapeia no servidor). Referência manual do corpo: docs/preview/mock-kit/dossie-simplix-api-request.mock.json
+ *
+ * Por defeito grava o último pedido em docs/preview/mock-kit/dossie-simplix-api-request.last-run.json
+ * (não sobrescreve o .mock.json).
+ *
+ * Pré-requisitos generate-sync: Documents:AllowSyncPdfGeneration=true (Development).
  *
  * Uso:
  *   node docs/scripts/post-dossie-estrutura-generate-sync.mjs
@@ -12,9 +18,9 @@
  *
  * Saída sem --template-slug: docs/preview/dossie-estrutura-generate-sync.request.json
  *
- * Com --template-slug (ex. dossie-simplix-v2), por defeito:
- *   - docs/preview/dossie-estrutura-generate-v2.request.json — JSON aninhado (meta + cliente + … + anexosPdf), alinhado ao contrato da BD.
- *   - docs/preview/dossie-estrutura-generate-v2.post-docengine.json — POST /documents/generate real (dados achatados + config.pdfsAnexos). O motor HTML usa {{CHAVE}} em maiúsculas; `dados` não pode ser só o aninhado.
+ * Com --template-slug:
+ *   - docs/preview/dossie-estrutura-generate-v2.request.json — cópia do input (contrato BD / meta opcional)
+ *   - mock-kit/dossie-simplix-api-request.last-run.json — último POST /documents/generate gravado
  *
  *   --request-out / --estrutura-out sobrepõem; --estrutura-out false desliga a cópia BD.
  */
@@ -69,7 +75,7 @@ function parseArgs(argv) {
   }
 
   if (o.templateSlug && !o.requestOutExplicit) {
-    o.requestOut = path.join(docs, 'preview', 'dossie-estrutura-generate-v2.post-docengine.json');
+    o.requestOut = path.join(docs, 'preview', 'mock-kit', 'dossie-simplix-api-request.last-run.json');
   }
 
   if (o.estruturaOut === undefined) {
@@ -148,13 +154,33 @@ async function postGenerateSync(opts, token, dados, pdfsAnexos) {
 
 async function main() {
   const opts = parseArgs(process.argv);
-  const rawPayload = JSON.parse(fs.readFileSync(opts.input, 'utf8'));
+  const fileRoot = JSON.parse(fs.readFileSync(opts.input, 'utf8'));
   if (opts.estruturaOut) {
     fs.mkdirSync(path.dirname(opts.estruturaOut), { recursive: true });
-    fs.writeFileSync(opts.estruturaOut, JSON.stringify(rawPayload, null, 2) + '\n', 'utf8');
+    fs.writeFileSync(opts.estruturaOut, JSON.stringify(fileRoot, null, 2) + '\n', 'utf8');
     console.log('Payload estruturado (contrato BD):', opts.estruturaOut);
   }
-  const estrutura = { ...rawPayload };
+
+  /** Suporta input só com `dados` aninhados OU corpo completo POST (mock-kit .mock.json). */
+  let presetEnvelope = null;
+  let nestedSource = fileRoot;
+  if (
+    fileRoot &&
+    typeof fileRoot === 'object' &&
+    fileRoot.dados &&
+    typeof fileRoot.dados === 'object' &&
+    !Array.isArray(fileRoot.dados) &&
+    fileRoot.config &&
+    typeof fileRoot.config === 'object'
+  ) {
+    presetEnvelope = {
+      requisicaoId: typeof fileRoot.requisicaoId === 'string' ? fileRoot.requisicaoId : null,
+      config: { ...fileRoot.config }
+    };
+    nestedSource = fileRoot.dados;
+  }
+
+  const estrutura = { ...nestedSource };
   delete estrutura.meta;
 
   const sem = loadStringFieldsFromJson(opts.semImagens);
@@ -162,9 +188,9 @@ async function main() {
   const dados = { ...sem, ...fromEstrutura };
   stripCcbCredEmitCorrespDoDadosSeSemCamposCcb(estrutura, dados);
 
-  const logo = String(dados.LOGO_SIMPLIX_BASE64 ?? '').trim();
+  const logo = String(dados.LOGO ?? '').trim();
   if (!logo) {
-    dados.LOGO_SIMPLIX_BASE64 =
+    dados.LOGO =
       'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
   }
 
@@ -178,25 +204,33 @@ async function main() {
     const centro = (process.env.CENTRO_CUSTO || 'DEMO').trim();
     const slugTail = String(opts.templateSlug).replace(/^dossie-/, '');
     const nomeArquivo = (process.env.NOME_ARQUIVO_PDF || `dossie-${slugTail}-mock.pdf`).trim();
-    bodyGen = {
-      requisicaoId: randomUUID(),
-      config: {
-        template: opts.templateSlug,
-        centroCusto: centro,
-        nomeArquivo,
-        ...(pdfsAnexos.length > 0 ? { pdfsAnexos } : {})
-      },
-      dados
+    /** Mesmo contrato que docs/preview/mock-kit/dossie-simplix-api-request.mock.json — dados aninhados; anexos vêm de dados.anexosPdf. */
+    const cfgFromCli = {
+      template: opts.templateSlug,
+      centroCusto: centro,
+      nomeArquivo
     };
+    bodyGen = presetEnvelope
+      ? {
+          requisicaoId: presetEnvelope.requisicaoId || randomUUID(),
+          config: {
+            ...presetEnvelope.config,
+            template: opts.templateSlug,
+            centroCusto:
+              process.env.CENTRO_CUSTO?.trim() || presetEnvelope.config.centroCusto || cfgFromCli.centroCusto,
+            nomeArquivo:
+              process.env.NOME_ARQUIVO_PDF?.trim() || presetEnvelope.config.nomeArquivo || cfgFromCli.nomeArquivo
+          },
+          dados: estrutura
+        }
+      : {
+          requisicaoId: randomUUID(),
+          config: cfgFromCli,
+          dados: estrutura
+        };
     fs.writeFileSync(opts.requestOut, JSON.stringify(bodyGen, null, 2) + '\n', 'utf8');
     console.log('Pedido POST /documents/generate gravado:', opts.requestOut);
-    console.log(
-      'Template:',
-      opts.templateSlug,
-      '| pdfsAnexos:',
-      pdfsAnexos.length,
-      pdfsAnexos.length ? `(ordens: ${pdfsAnexos.map((x) => x.ordem).join(', ')})` : ''
-    );
+    console.log('Template:', opts.templateSlug, '| dados: aninhados (como mock-kit)', '| PDFs em dados.anexosPdf:', pdfsAnexos.length);
   } else {
     const html = fs.readFileSync(opts.html, 'utf8');
     bodySync = {

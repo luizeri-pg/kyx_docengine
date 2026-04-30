@@ -21,8 +21,8 @@ cd "$ROOT"
 : "${BASE_URL:=http://127.0.0.1:3000}"
 export BASE_URL
 
-# Corpo POST /documents/generate (dados achatados + pdfsAnexos)
-REQ_POST="$ROOT/docs/preview/dossie-estrutura-generate-v2.post-docengine.json"
+# Último POST /documents/generate gravado pelo script (dados aninhados — ver mock oficial em mock-kit/)
+REQ_POST="$ROOT/docs/preview/mock-kit/dossie-simplix-api-request.last-run.json"
 # Contrato BD / payload aninhado (gerado junto; igual ao sample em docs/samples/)
 REQ_BD="$ROOT/docs/preview/dossie-estrutura-generate-v2.request.json"
 PDF="$ROOT/docs/preview/dossie-estrutura-mock-v2-api.pdf"
