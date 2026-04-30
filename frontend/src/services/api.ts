@@ -99,6 +99,8 @@ export interface GenerateDocumentRequest {
     template?: string;
     centroCusto: string;
     nomeArquivo?: string;
+    /** PDFs completos em Base64, concatenados após o PDF do template (ex.: proposta). */
+    pdfsAnexosBase64?: string[];
     inlineTemplate?: InlineTemplatePayload;
   };
   dados: Record<string, string>;
@@ -116,6 +118,8 @@ export type GenerateDocumentApiResponse = ApiResponse<GenerateDocumentResponse>;
 export interface GenerateSyncPdfRequest {
   requisicaoId?: string;
   nomeArquivo?: string;
+  /** PDFs completos em Base64 após o PDF gerado do inlineTemplate. */
+  pdfsAnexosBase64?: string[];
   inlineTemplate: InlineTemplatePayload;
   dados: Record<string, string>;
 }
