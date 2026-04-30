@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Dossie Fidelizza - Zero</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #111827;
+      font-size: 11px;
+      line-height: 1.42;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      background: #ffffff;
+    }
+    .page {
+      min-height: 100%;
+      border: 1px solid #d8e2ee;
+      border-radius: 8px;
+      overflow: hidden;
+      page-break-after: always;
+      background: #ffffff;
+    }
+    .page:last-of-type { page-break-after: auto; }
+    .topbar {
+      background: linear-gradient(90deg, #0b2f53 0%, #0f4a7d 55%, #1673bb 100%);
+      color: #ffffff;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-title {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: .02em;
+    }
+    .brand-subtitle {
+      margin: 3px 0 0;
+      font-size: 11px;
+      opacity: .9;
+    }
+    /**
+     * Hash no topo: só referência visual. No PDF final fundido com outros anexos,
+     * o hash oficial + numeração global ficam no rodapé (carimbo após o merge).
+     * Evite duplicar rodapé Chromium ao gerar este HTML como anexo (generate-sync
+     * com DOCENGINE_USE_CHROME_PAGE_FOOTER=false).
+     */
+    .hash-box {
+      text-align: right;
+      font-size: 10px;
+      max-width: 260px;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .hash-box > div + div { margin-top: 6px; }
+    .hash-box .mono { display: block; }
+    .content { padding: 14px; }
+    .section {
+      border: 1px solid #dbe5f0;
+      border-radius: 7px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+    .section-head {
+      background: #edf4fb;
+      color: #0b2f53;
+      border-bottom: 1px solid #dbe5f0;
+      padding: 7px 10px;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .section-body { padding: 10px; }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px 14px;
+    }
+    .field { display: flex; gap: 6px; }
+    .k { color: #4b5563; font-weight: 700; min-width: 134px; }
+    .v { color: #0f172a; }
+    .mono { font-family: "Courier New", Courier, monospace; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 10px;
+    }
+    th, td {
+      border: 1px solid #dbe5f0;
+      padding: 6px 7px;
+      vertical-align: top;
+    }
+    th {
+      background: #f3f7fc;
+      color: #0b2f53;
+      font-weight: 800;
+      text-align: left;
+    }
+    .img-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .img-card {
+      border: 1px solid #dbe5f0;
+      border-radius: 6px;
+      overflow: hidden;
+      background: #f8fbff;
+    }
+    .img-title {
+      padding: 6px 8px;
+      font-size: 10px;
+      font-weight: 800;
+      color: #0b2f53;
+      border-bottom: 1px solid #dbe5f0;
+      background: #eef5fd;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .img-wrap {
+      height: 185px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      padding: 6px;
+    }
+    .img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border: 1px dashed #c9d8ea;
+      border-radius: 4px;
+      background: #ffffff;
+    }
+    .chip {
+      display: inline-block;
+      border: 1px solid #bfd7f2;
+      background: #eaf4ff;
+      color: #0f4a7d;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 10px;
+      font-weight: 700;
+      margin: 2px 4px 2px 0;
+    }
+    .footer {
+      border-top: 1px solid #dbe5f0;
+      color: #64748b;
+      font-size: 10px;
+      padding: 7px 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .kv-inline {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+    }
+    .kv-inline div {
+      border: 1px solid #dbe5f0;
+      border-radius: 6px;
+      padding: 6px 8px;
+      min-width: 180px;
+      background: #ffffff;
+    }
+    .kv-inline strong {
+      display: block;
+      font-size: 10px;
+      color: #0b2f53;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+    .header-line {
+      text-align: center;
+      font-size: 11px;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .doc-title-center {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 700;
+      margin: 8px 0 10px;
+      text-transform: uppercase;
+    }
+    .blank {
+      display: inline-block;
+      border-bottom: 1px solid #111827;
+      min-height: 13px;
+      vertical-align: bottom;
+    }
+    .b-xs { min-width: 60px; }
+    .b-sm { min-width: 120px; }
+    .b-md { min-width: 220px; }
+    .b-lg { min-width: 330px; }
+    .check {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 1px solid #111827;
+      text-align: center;
+      line-height: 12px;
+      font-weight: 700;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .line { margin: 8px 0; }
+    .center { text-align: center; }
+    .small { font-size: 10px; }
+  </style>
+</head>
+<body>
+
+  <!-- PAGINA 1 -->
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1 class="brand-title">Dossie probatorio de contratacao digital</h1>
+        <p class="brand-subtitle">{{MARCA_NOME}} | {{PRODUTO_NOME}} | {{CANAL_ORIGEM}}</p>
+      </div>
+      <div class="hash-box">
+        <div><strong>Hash probatorio</strong></div>
+        <div class="mono">{{HASH_DOSSIE}}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-head">Dados do cliente</div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><span class="k">Nome</span><span class="v">{{CLIENTE_NOME}}</span></div>
+            <div class="field"><span class="k">CPF</span><span class="v">{{CLIENTE_CPF}}</span></div>
+            <div class="field"><span class="k">Nascimento</span><span class="v">{{CLIENTE_NASCIMENTO}}</span></div>
+            <div class="field"><span class="k">Telefone</span><span class="v">{{CLIENTE_TELEFONE}}</span></div>
+            <div class="field"><span class="k">E-mail</span><span class="v">{{CLIENTE_EMAIL}}</span></div>
+            <div class="field"><span class="k">Protocolo</span><span class="v mono">{{PROTOCOLO_ATENDIMENTO}}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">Dados da captura</div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><span class="k">Data e hora</span><span class="v">{{CAPTURA_DATA_HORA}}</span></div>
+            <div class="field"><span class="k">IP / Porta</span><span class="v mono">{{CAPTURA_IP}}:{{CAPTURA_PORTA}}</span></div>
+            <div class="field"><span class="k">Latitude</span><span class="v">{{CAPTURA_LATITUDE}}</span></div>
+            <div class="field"><span class="k">Longitude</span><span class="v">{{CAPTURA_LONGITUDE}}</span></div>
+            <div class="field"><span class="k">Modelo / OS</span><span class="v">{{CAPTURA_MODELO_OS}}</span></div>
+            <div class="field"><span class="k">User agent</span><span class="v">{{CAPTURA_USER_AGENT}}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">Evidencias visuais</div>
+        <div class="section-body">
+          <div class="img-grid">
+            <div class="img-card">
+              <div class="img-title">Documento frente</div>
+              <div class="img-wrap"><img src="{{IMG_DOCUMENTO_FRENTE}}" alt="Documento frente" /></div>
+            </div>
+            <div class="img-card">
+              <div class="img-title">Documento verso</div>
+              <div class="img-wrap"><img src="{{IMG_DOCUMENTO_VERSO}}" alt="Documento verso" /></div>
+            </div>
+            <div class="img-card">
+              <div class="img-title">Selfie / liveness</div>
+              <div class="img-wrap"><img src="{{IMG_SELFIE}}" alt="Selfie" /></div>
+            </div>
+            <div class="img-card">
+              <div class="img-title">Facematch</div>
+              <div class="img-wrap"><img src="{{IMG_FACEMATCH}}" alt="Facematch" /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>Emissao {{DATA_EMISSAO_DOSSIE}}</span><span>Pagina 1/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 2 -->
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1 class="brand-title">Trilha e logs da jornada</h1>
+        <p class="brand-subtitle">Eventos e interacoes do atendimento</p>
+      </div>
+      <div class="hash-box">
+        <div><strong>Hash probatorio</strong></div>
+        <div class="mono">{{HASH_DOSSIE}}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-head">Trilha de eventos</div>
+        <div class="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 28%;">Evento</th>
+                <th style="width: 22%;">Data/Hora</th>
+                <th>Identificacao tecnica</th>
+              </tr>
+            </thead>
+            <tbody>{{EVENTOS_HTML}}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">Logs das integracoes com o cliente</div>
+        <div class="section-body">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 20%;">Data/Hora</th>
+                <th style="width: 16%;">Tipo</th>
+                <th>Interacao</th>
+              </tr>
+            </thead>
+            <tbody>{{INTERACOES_HTML}}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="footer"><span>Atendimento {{PROTOCOLO_ATENDIMENTO}}</span><span>Pagina 2/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 3 -->
+  <div class="page">
+    <div class="topbar">
+      <div>
+        <h1 class="brand-title">Contrato, resumo e anexos</h1>
+        <p class="brand-subtitle">Consolidado final da jornada</p>
+      </div>
+      <div class="hash-box">
+        <div><strong>Hash probatorio</strong></div>
+        <div class="mono">{{HASH_DOSSIE}}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section">
+        <div class="section-head">Resumo financeiro da operacao</div>
+        <div class="section-body">
+          <div class="kv-inline">
+            <div><strong>Proposta</strong>{{PROPOSTA_NUMERO}}</div>
+            <div><strong>Valor a receber</strong>{{OPERACAO_VALOR_RECEBER}}</div>
+            <div><strong>Valor da operacao</strong>{{OPERACAO_VALOR_TOTAL}}</div>
+            <div><strong>Taxa de juros</strong>{{OPERACAO_TAXA_JUROS}}</div>
+            <div><strong>CET</strong>{{OPERACAO_CET}}</div>
+            <div><strong>Prazo</strong>{{OPERACAO_PRAZO}}</div>
+          </div>
+        </div>
+      </div>
+      <div class="section">
+        <div class="section-head">Trecho juridico (CCB / termos)</div>
+        <div class="section-body" style="white-space: pre-wrap;">{{TEXTO_JURIDICO}}</div>
+      </div>
+      <div class="section">
+        <div class="section-head">Anexos incorporados no dossie</div>
+        <div class="section-body">{{ANEXOS_HTML}}</div>
+      </div>
+      <div class="section">
+        <div class="section-head">Assinatura eletronica</div>
+        <div class="section-body">
+          <div class="grid-2">
+            <div class="field"><span class="k">Status prova de vida</span><span class="v">{{PROVA_VIDA_STATUS}}</span></div>
+            <div class="field"><span class="k">Data/Hora assinatura</span><span class="v">{{ASSINATURA_DATA_HORA}}</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="footer"><span>{{MARCA_NOME}} - consolidado</span><span>Pagina 3/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 4 -->
+  <div class="page">
+    <div class="content">
+      <div class="header-line">Avenida Tambore, 267 - 27o Andar - Alphaville, Barueri/SP | CEP 06460-000</div>
+      <div class="doc-title-center">Check-list de Documentos</div>
+      <p class="line"><b>Empresa:</b> {{EMPRESA_NOME}} &nbsp;&nbsp; <b>Nome:</b> <span class="blank b-md">{{COLABORADOR_NOME}}</span></p>
+      <p class="line"><b>Admissao:</b> <span class="blank b-sm">{{DATA_ADMISSAO}}</span> &nbsp;&nbsp; <b>E-mail para contato:</b> <span class="blank b-md">{{COLABORADOR_EMAIL}}</span></p>
+      <hr />
+      <div class="grid-2">
+        <p class="line"><span class="check">{{DOC_FOTO_34}}</span> 01 foto 3x4</p>
+        <p class="line"><span class="check">{{DOC_RG}}</span> Copia do RG (nao CNH)</p>
+        <p class="line"><span class="check">{{DOC_CPF}}</span> Copia do CPF/CIC</p>
+        <p class="line"><span class="check">{{DOC_HISTORICO}}</span> Copia do historico escolar</p>
+        <p class="line"><span class="check">{{DOC_TITULO}}</span> Copia do titulo de eleitor</p>
+        <p class="line"><span class="check">{{DOC_PIS}}</span> Copia do cartao PIS</p>
+        <p class="line"><span class="check">{{DOC_RESERVISTA}}</span> Copia da reservista</p>
+        <p class="line"><span class="check">{{DOC_CTPS}}</span> Carteira de trabalho digital</p>
+        <p class="line"><span class="check">{{DOC_ENDERECO}}</span> Comprovante de endereco</p>
+        <p class="line"><span class="check">{{DOC_BANCO}}</span> Dados bancarios Itau</p>
+        <p class="line"><span class="check">{{DOC_CERTIDAO}}</span> Certidao (nascimento/casamento)</p>
+        <p class="line"><span class="check">{{DOC_CPF_CONJUGE}}</span> CPF do conjuge</p>
+        <p class="line"><span class="check">{{DOC_CERTIDAO_FILHOS}}</span> Certidao de filhos ate 10 anos</p>
+        <p class="line"><span class="check">{{DOC_VACINA_FILHOS}}</span> Carteira vacinacao filhos</p>
+        <p class="line"><span class="check">{{DOC_CPF_FILHOS}}</span> CPF dos filhos</p>
+        <p class="line"><span class="check">{{DOC_ASO}}</span> ASO - Atestado de saude ocupacional</p>
+        <p class="line"><span class="check">{{DOC_COVID}}</span> Comprovante vacinacao COVID-19</p>
+        <p class="line"><span class="check">{{DOC_REG_CPF}}</span> Consulta regularidade CPF</p>
+        <p class="line"><span class="check">{{DOC_QUALIF_PIS}}</span> Qualificacao cadastral PIS</p>
+      </div>
+      <div class="footer"><span>Book admissional</span><span>Pagina 4/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 5 -->
+  <div class="page">
+    <div class="content">
+      <div class="header-line">Avenida Tambore, 267 - 27o Andar - Alphaville, Barueri/SP | CEP 06460-000</div>
+      <div class="doc-title-center">Autodeclaracao</div>
+      <p class="line">
+        Eu, <span class="blank b-lg">{{COLABORADOR_NOME}}</span>, nascido em
+        <span class="blank b-sm">{{COLABORADOR_NASCIMENTO}}</span>, portador do CPF
+        <span class="blank b-sm">{{COLABORADOR_CPF}}</span>, me autodeclaro:
+      </p>
+      <p class="line"><span class="check">{{RACA_INDIGENA}}</span> Indigena</p>
+      <p class="line"><span class="check">{{RACA_BRANCA}}</span> Branca</p>
+      <p class="line"><span class="check">{{RACA_PRETA}}</span> Preta</p>
+      <p class="line"><span class="check">{{RACA_AMARELA}}</span> Amarela</p>
+      <p class="line"><span class="check">{{RACA_PARDA}}</span> Parda</p>
+      <p class="line small">
+        Esta declaracao e voluntaria e utilizada para cumprimento de politicas de igualdade e diversidade.
+      </p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_AUTODECLARACAO}}</span></p>
+      <br /><br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Assinatura do(a) colaborador(a)</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 5/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 6 -->
+  <div class="page">
+    <div class="content">
+      <div class="header-line">Avenida Tambore, 267 - 27o Andar - Alphaville, Barueri/SP | CEP 06460-000</div>
+      <div class="doc-title-center">Adiantamento Salarial</div>
+      <p class="line"><b>Nome:</b> {{COLABORADOR_NOME}}</p>
+      <p class="line"><b>Cargo:</b> {{COLABORADOR_CARGO}}</p>
+      <p class="line"><b>Data Admissao:</b> {{DATA_ADMISSAO}}</p>
+      <p class="line">
+        Informamos que o adiantamento salarial pago no dia 20 do mes nao e obrigatorio.
+        Favor indicar sua opcao:
+      </p>
+      <p class="line"><span class="check">{{ADIANTAMENTO_NAO}}</span> Nao desejo aderir ao adiantamento salarial</p>
+      <p class="line"><span class="check">{{ADIANTAMENTO_SIM}}</span> Desejo aderir ao adiantamento salarial</p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_ADIANTAMENTO}}</span></p>
+      <br /><br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Assinatura do(a) colaborador(a)</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 6/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 7 -->
+  <div class="page">
+    <div class="content">
+      <div class="doc-title-center">Solicitacao de Vale Transporte</div>
+      <p class="line"><b>Empresa:</b> {{EMPRESA_NOME}}</p>
+      <p class="line"><b>Nome do empregado:</b> {{COLABORADOR_NOME}} &nbsp;&nbsp; <b>CPF:</b> {{COLABORADOR_CPF}}</p>
+      <p class="line"><b>Endereco residencial:</b> {{COLABORADOR_ENDERECO_COMPLETO}}</p>
+      <p class="line"><b>Opta por vale transporte:</b> <span class="check">{{VT_SIM}}</span> Sim &nbsp; <span class="check">{{VT_NAO}}</span> Nao</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Nome cartao</th>
+            <th>N da linha</th>
+            <th>Qtde diaria</th>
+            <th>Valor tarifa</th>
+            <th>Ja possui cartao?</th>
+          </tr>
+        </thead>
+        <tbody>{{VT_LINHAS_HTML}}</tbody>
+      </table>
+      <p class="line small">
+        Declaro que as informacoes prestadas sao verdadeiras e autorizo o desconto legal de ate 6% do salario base para custeio do vale transporte.
+      </p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_VALE_TRANSPORTE}}</span></p>
+      <br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Assinatura do funcionario</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 7/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 8 -->
+  <div class="page">
+    <div class="content">
+      <div class="doc-title-center">Regras para o Vale Transporte</div>
+      <p class="line">
+        O colaborador devera providenciar a 1a ou 2a via dos cartoes de transporte
+        no prazo maximo de 15 dias apos a admissao.
+      </p>
+      <p class="line">
+        O nao cumprimento do prazo acima pode impedir recargas complementares
+        ate regularizacao dos dados.
+      </p>
+      <p class="line">
+        O vale transporte e de uso exclusivo no trajeto residencia-trabalho e vice-versa.
+        Uso indevido caracteriza falta grave.
+      </p>
+      <p class="line">
+        Em caso de desligamento, afastamento ou alteracao de trajeto, o colaborador
+        deve comunicar o RH imediatamente.
+      </p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_REGRAS_VT}}</span></p>
+      <br /><br /><br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Ciencia e assinatura do(a) colaborador(a)</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 8/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 9 -->
+  <div class="page">
+    <div class="content">
+      <div class="header-line">Avenida Tambore, 267 - 27o Andar - Alphaville - SP | CEP 06460-000</div>
+      <div class="doc-title-center">Termo de Declaracao de Identidade de Genero</div>
+      <p class="line">
+        Eu, {{COLABORADOR_NOME}}, nascido(a) em {{COLABORADOR_NASCIMENTO}},
+        CPF {{COLABORADOR_CPF}}, declaro minha identidade de genero como:
+      </p>
+      <p class="line"><span class="check">{{GENERO_CIS}}</span> Cisgenero</p>
+      <p class="line"><span class="check">{{GENERO_TRANS}}</span> Transgenero</p>
+      <p class="line"><span class="check">{{GENERO_NAO_BINARIO}}</span> Nao-binario</p>
+      <p class="line"><span class="check">{{GENERO_FLUIDO}}</span> Genero-fluido</p>
+      <p class="line"><span class="check">{{GENERO_AGENERO}}</span> Agenero</p>
+      <p class="line"><span class="check">{{GENERO_BIGENERO}}</span> Bigenero</p>
+      <p class="line"><span class="check">{{GENERO_DEMIGENERO}}</span> Demigenero</p>
+      <p class="line small">
+        Esta declaracao e voluntaria e sera tratada com confidencialidade.
+      </p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_IDENTIDADE_GENERO}}</span></p>
+      <br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Assinatura do(a) colaborador(a)</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 9/10</span></div>
+    </div>
+  </div>
+
+  <!-- PAGINA 10 -->
+  <div class="page">
+    <div class="content">
+      <div class="header-line">Avenida Tambore, 267 - 27o Andar - Alphaville - SP | CEP 06460-000</div>
+      <div class="doc-title-center">Termo de Declaracao de Orientacao Sexual</div>
+      <p class="line">
+        Eu, {{COLABORADOR_NOME}}, nascido(a) em {{COLABORADOR_NASCIMENTO}},
+        CPF {{COLABORADOR_CPF}}, declaro minha orientacao sexual como:
+      </p>
+      <p class="line"><span class="check">{{ORIENT_HETERO}}</span> Heterossexual</p>
+      <p class="line"><span class="check">{{ORIENT_HOMO}}</span> Homossexual</p>
+      <p class="line"><span class="check">{{ORIENT_BI}}</span> Bissexual</p>
+      <p class="line"><span class="check">{{ORIENT_NAO_DECLARAR}}</span> Prefiro nao declarar</p>
+      <p class="line"><span class="check">{{ORIENT_OUTROS_MARCADO}}</span> Outros: <span class="blank b-md">{{ORIENT_OUTROS_TEXTO}}</span></p>
+      <p class="line small">
+        Esta declaracao e voluntaria e sigilosa, observando a LGPD e politicas internas.
+      </p>
+      <p class="line">Data: <span class="blank b-sm">{{DATA_ORIENTACAO_SEXUAL}}</span></p>
+      <br />
+      <p class="center">_______________________________________________</p>
+      <p class="center small">Assinatura do(a) colaborador(a)</p>
+      <div class="footer"><span>Book admissional</span><span>Pagina 10/10</span></div>
+    </div>
+  </div>
+
+</body>
+</html>
