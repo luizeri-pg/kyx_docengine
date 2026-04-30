@@ -54,19 +54,7 @@ public class AuthService : IAuthService
             }
             catch (UnauthorizedAccessException)
             {
-                // Partner rejeitou (credenciais, bloqueado, etc.): se o login existir em AllowedLogins,
-                // tentar fallback (útil quando tb_usuario tem o mesmo str_login com hash desatualizado).
-                if (_authSettings.FallbackEnabled
-                    && _authSettings.AllowedLogins?.Count > 0
-                    && _authSettings.AllowedLogins.Any(p =>
-                        string.Equals((p.Username ?? string.Empty).Trim(), username, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _logger.LogInformation(
-                        "[AuthService] PartnerDB não autenticou; a tentar fallback em memória para {Username}",
-                        username);
-                    return await _fallbackService.LoginAsync(request, cancellationToken);
-                }
-
+                // Re-throw credenciais inválidas/bloqueado sem tentar fallback
                 throw;
             }
             catch (Exception ex)

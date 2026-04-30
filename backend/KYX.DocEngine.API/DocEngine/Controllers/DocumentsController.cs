@@ -93,10 +93,7 @@ public class DocumentsController : ControllerBase
                 IsActive = true
             };
 
-            var dadosSync = new Dictionary<string, string>(request.Dados, StringComparer.OrdinalIgnoreCase);
-            DossieEstruturadaMapper.NormalizeBrandingForGenerate(dadosSync);
-
-            var missingFields = _templateService.ValidateRequiredFields(templateEntity, dadosSync);
+            var missingFields = _templateService.ValidateRequiredFields(templateEntity, request.Dados);
             if (missingFields.Any())
             {
                 return BadRequest(new ApiResponse<object>
@@ -108,7 +105,7 @@ public class DocumentsController : ControllerBase
                 });
             }
 
-            var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, dadosSync, pdfIntercaladoSync);
+            var pdfBytes = await _pdfEngine.GenerateAsync(templateEntity, request.Dados, pdfIntercaladoSync);
             pdfBytes = AppendAnnexPdfs(pdfBytes, ResolveAnnexPdfsOrdered(request.PdfsAnexos, request.PdfsAnexosBase64));
             var nome = string.IsNullOrWhiteSpace(request.NomeArquivo) ? "documento.pdf" : request.NomeArquivo;
 
@@ -173,18 +170,7 @@ public class DocumentsController : ControllerBase
             });
         }
 
-        Template? templateEntity = null;
-        if (_configuration.GetValue("Documents:DevFileTemplateFallback", false))
-        {
-            /** Prioridade ao HTML do repo — evita template na BD desactualizado (ex.: {{LOGO_SIMPLIX_BASE64}}). */
-            templateEntity = DevFileTemplateFallback.TryLoad(
-                _environment.ContentRootPath,
-                request.Config.Template!,
-                _logger);
-        }
-
-        templateEntity ??= await _templateService.GetBySlugAsync(request.Config.Template!);
-
+        var templateEntity = await _templateService.GetBySlugAsync(request.Config.Template!);
         if (templateEntity == null)
         {
             return NotFound(new ApiResponse<object>
@@ -213,8 +199,6 @@ public class DocumentsController : ControllerBase
         {
             dadosFlat = JsonFlattenHelper.FlattenToStringDictionary(request.Dados);
         }
-
-        DossieEstruturadaMapper.NormalizeBrandingForGenerate(dadosFlat);
 
         var missingFields = _templateService.ValidateRequiredFields(templateEntity, dadosFlat);
         if (missingFields.Any())
@@ -298,23 +282,13 @@ public class DocumentsController : ControllerBase
             Dados = request.Dados
         };
 
-        var skipPersist = _configuration.GetValue("Documents:SkipPartnerDocumentoPersist", false);
-        FunctionCallResult dbInsert = new(null, null);
-        if (!skipPersist)
-        {
-            dbInsert = await _partnerDbFunctionsService.InsertDocumentoAsync(
-                requestToPersist,
-                request.Config.Template!,
-                guidArquivo,
-                dadosPersist);
-        }
-        else
-        {
-            _logger.LogWarning(
-                "Documents:SkipPartnerDocumentoPersist=true — PDF gerado sem gravar via ins_tb_documento (apenas para desenvolvimento).");
-        }
+        var dbInsert = await _partnerDbFunctionsService.InsertDocumentoAsync(
+            requestToPersist,
+            request.Config.Template!,
+            guidArquivo,
+            dadosPersist);
 
-        if (!skipPersist && !string.IsNullOrWhiteSpace(dbInsert.Erro))
+        if (!string.IsNullOrWhiteSpace(dbInsert.Erro))
         {
             return BadRequest(new ApiResponse<object>
             {

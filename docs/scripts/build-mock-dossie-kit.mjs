@@ -2,8 +2,7 @@
 /**
  * Gera um kit de demonstração em docs/preview/mock-kit/:
  * - PDFs anexo mínimos (válidos) para config.pdfsAnexosBase64
- * - dossie-simplix-api-request.flat.mock.json — POST exemplo com dados já planos + pdfsAnexosBase64
- *   (o contrato aninhado oficial está em dossie-simplix-api-request.mock.json — não sobrescrito aqui)
+ * - dossie-simplix-api-request.mock.json — corpo exemplo para POST /documents/generate
  * - Tenta regenerar dossie-simplix-mock.pdf (Chrome headless) e copia para mock-kit
  *
  * Uso: node docs/scripts/build-mock-dossie-kit.mjs
@@ -49,13 +48,13 @@ const request = {
   dados
 };
 
-const jsonPathFlat = join(mockKit, 'dossie-simplix-api-request.flat.mock.json');
-writeFileSync(jsonPathFlat, JSON.stringify(request, null, 2), 'utf-8');
+const jsonPath = join(mockKit, 'dossie-simplix-api-request.mock.json');
+writeFileSync(jsonPath, JSON.stringify(request, null, 2), 'utf-8');
 
 console.log('Kit mock-kit:');
 console.log('  ', propostaPath);
 console.log('  ', termoPath);
-console.log('  ', jsonPathFlat, '(dados planos; contrato aninhado: dossie-simplix-api-request.mock.json)');
+console.log('  ', jsonPath);
 
 const chromeMac =
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -108,5 +107,4 @@ if (existsSync(dadosComImagensPath)) {
   console.log('  Tamanho (bytes):', Buffer.byteLength(JSON.stringify(fullReq), 'utf8'));
 }
 
-console.log('\nPOST /documents/generate — leve plano (sem imagens):', jsonPathFlat);
-console.log('POST /documents/generate — aninhado (Simplix):', join(mockKit, 'dossie-simplix-api-request.mock.json'));
+console.log('\nPOST /documents/generate — leve (sem imagens):', jsonPath);

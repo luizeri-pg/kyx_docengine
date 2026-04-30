@@ -5,7 +5,6 @@ using System.Threading;
 using KYX.DocEngine.API.Helpers;
 using KYX.DocEngine.API.Models.Entities;
 using PdfSharp.Pdf;
-using SixLabors.ImageSharp;
 using PdfSharp.Pdf.AcroForms;
 using PdfSharp.Pdf.IO;
 using PuppeteerSharp;
@@ -66,7 +65,7 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
     /// <summary>Placeholders de <c>src</c> de imagem que aceitam Base64 cru (sem prefixo <c>data:</c>).</summary>
     private static readonly HashSet<string> ImageSrcKeysAllowRawBase64 = new(StringComparer.OrdinalIgnoreCase)
     {
-        "LOGO",
+        "LOGO_SIMPLIX_BASE64",
         "IMG_CLIENTE_FOTO",
         "IMG_SELFIE",
         "IMG_DOCUMENTO_FRENTE",
@@ -298,73 +297,24 @@ public class HtmlPdfRenderer : IHtmlPdfRenderer
         }
 
         var v = value.Trim();
-        string coerced;
         if (v.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
             v.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             v.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
-            coerced = v;
-        }
-        else
-        {
-            var compact = v.Replace("\r", string.Empty, StringComparison.Ordinal)
-                .Replace("\n", string.Empty, StringComparison.Ordinal)
-                .Replace(" ", string.Empty, StringComparison.Ordinal);
-
-            if (!Base64.IsValid(compact.AsSpan(), out _))
-            {
-                return value;
-            }
-
-            var mime = DetectImageMimeFromBase64Payload(compact) ?? "image/png";
-            coerced = $"data:{mime};base64,{compact}";
+            return v;
         }
 
-        return ConvertWebpDataUriToPngForChromePdf(coerced);
-    }
+        var compact = v.Replace("\r", string.Empty, StringComparison.Ordinal)
+            .Replace("\n", string.Empty, StringComparison.Ordinal)
+            .Replace(" ", string.Empty, StringComparison.Ordinal);
 
-    /// <summary>
-    /// O Chromium por vezes não rasteriza <c>data:image/webp</c> ao imprimir para PDF — converter para PNG garante o logo no cabeçalho.
-    /// </summary>
-    private static string ConvertWebpDataUriToPngForChromePdf(string dataUriOrUrl)
-    {
-        if (!dataUriOrUrl.StartsWith("data:image/webp", StringComparison.OrdinalIgnoreCase))
+        if (!Base64.IsValid(compact.AsSpan(), out _))
         {
-            return dataUriOrUrl;
+            return value;
         }
 
-        var comma = dataUriOrUrl.IndexOf(',', StringComparison.Ordinal);
-        if (comma < 0 || comma >= dataUriOrUrl.Length - 1)
-        {
-            return dataUriOrUrl;
-        }
-
-        byte[] webpBytes;
-        try
-        {
-            webpBytes = Convert.FromBase64String(dataUriOrUrl.AsSpan(comma + 1).Trim().ToString());
-        }
-        catch
-        {
-            return dataUriOrUrl;
-        }
-
-        if (webpBytes.Length < 12)
-        {
-            return dataUriOrUrl;
-        }
-
-        try
-        {
-            using var image = Image.Load(webpBytes);
-            using var ms = new MemoryStream();
-            image.SaveAsPng(ms);
-            return "data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
-        }
-        catch
-        {
-            return dataUriOrUrl;
-        }
+        var mime = DetectImageMimeFromBase64Payload(compact) ?? "image/png";
+        return $"data:{mime};base64,{compact}";
     }
 
     private static string? DetectImageMimeFromBase64Payload(string compactBase64)

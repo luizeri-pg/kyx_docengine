@@ -86,7 +86,6 @@ function normalizeImageDataUri(base64OrDataUri, mimeFallback = 'image/jpeg') {
   if (compact.startsWith('iVBOR')) mime = 'image/png';
   else if (compact.startsWith('/9j/')) mime = 'image/jpeg';
   else if (compact.startsWith('R0lGOD')) mime = 'image/gif';
-  else if (compact.startsWith('UklGR')) mime = 'image/webp';
   return `data:${mime};base64,${compact}`;
 }
 
@@ -107,7 +106,7 @@ function looksLikeRasterImageBase64(s) {
     .replace(/\s/g, '');
   if (!c) return false;
   if (/^data:image\//i.test(c)) return true;
-  return /^(iVBOR|\/9j\/|R0lGOD|UklGR)/.test(c);
+  return /^(iVBOR|\/9j\/|R0lGOD)/.test(c);
 }
 
 function coalesceChavesTemplateLista(v) {
@@ -431,25 +430,6 @@ export function buildTemplateDadosFromEstrutura(e) {
 
   out.DOSSIE_BLOCO_INTERCALADO_HTML = pickDossieBlocoIntercaladoHtml(e);
   out.TERMOS_POLITICA_HTML = pickTermosPoliticaHtml(e);
-
-  const marca = e.marca != null && typeof e.marca === 'object' ? e.marca : null;
-  const logoRaw =
-    e.logoBase64 ??
-    e.logo ??
-    e.logoSimplixBase64 ??
-    (marca != null ? marca.logoBase64 ?? marca.logo : undefined);
-  if (logoRaw != null && String(logoRaw).trim() !== '') {
-    out.LOGO = normalizeImageDataUri(String(logoRaw));
-  }
-  const tituloRaw =
-    e.titulo ??
-    e.tituloDossie ??
-    e.tituloCabecalho ??
-    e.headerTitulo ??
-    (marca != null ? marca.titulo ?? marca.tituloDossie ?? marca.tituloCabecalho : undefined);
-  if (tituloRaw != null && String(tituloRaw).trim() !== '') {
-    out.DOSSIE_HEADER_TITULO = String(tituloRaw);
-  }
 
   return out;
 }

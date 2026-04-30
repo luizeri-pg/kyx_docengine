@@ -167,9 +167,9 @@ function buildDados(includeImages) {
 
     ficheirosImagensEBase64: {
       ondeVao:
-        'No objeto dados, como strings nos mesmos nomes do template (ex.: LOGO). Não é um anexo multipart: é texto no JSON.',
+        'No objeto dados, como strings nos mesmos nomes do template (ex.: LOGO_SIMPLIX_BASE64). Não é um anexo multipart: é texto no JSON.',
       chavesDeImagemNoTemplate: [
-        'LOGO',
+        'LOGO_SIMPLIX_BASE64',
         'IMG_CLIENTE_FOTO',
         'IMG_SELFIE',
         'IMG_DOCUMENTO_FRENTE',
@@ -178,7 +178,7 @@ function buildDados(includeImages) {
       formatosAceitesPeloDocEngine:
         'Data URI completa (data:image/png;base64,...) ou só o Base64 da imagem (sem prefixo) — o API normaliza para data URI nas chaves de imagem acima. URL https também funciona se o Chrome conseguir ir buscar na impressão.',
       exemploNode:
-        "import fs from 'fs'; const b64 = fs.readFileSync('logo.png').toString('base64'); dados.LOGO = 'data:image/png;base64,' + b64;",
+        "import fs from 'fs'; const b64 = fs.readFileSync('logo.png').toString('base64'); dados.LOGO_SIMPLIX_BASE64 = 'data:image/png;base64,' + b64;",
       pdfsAdicionaisNoFinalDoDossie:
         'Ficheiros PDF completos (ex.: proposta) não entram em dados: use config.pdfsAnexosBase64 no POST /documents/generate — array de strings, cada uma um PDF inteiro em Base64, anexados após o HTML→PDF.'
     },
@@ -209,7 +209,7 @@ function buildDados(includeImages) {
   };
 
   const dados = {
-    LOGO: logo,
+    LOGO_SIMPLIX_BASE64: logo,
     IMG_CLIENTE_FOTO: fotoCliente,
     IMG_SELFIE: selfie,
     IMG_DOCUMENTO_FRENTE: docImg,

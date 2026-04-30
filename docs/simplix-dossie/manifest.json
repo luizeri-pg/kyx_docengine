@@ -6,7 +6,7 @@
   "buildUpsertDossieSimplixV2": "node docs/scripts/build-template-dossie-upsert-payload.mjs --slug dossie-simplix-v2 --name \"Dossiê probatório – Contratação Digital Simplix (v2)\" --out docs/preview/template-dossie-simplix-v2-upsert.json",
   "registarApi": "bash docs/simplix-dossie/registrar-em-api.sh — por defeito POST com docs/preview/template-dossie-simplix-upsert.json; TOKEN ou DOCENGINE_USERNAME+DOCENGINE_PASSWORD (ex.: docengine.demo)",
   "registarDossieSimplixV2": "export TEMPLATE_JSON=\"$PWD/docs/preview/template-dossie-simplix-v2-upsert.json\" && bash docs/simplix-dossie/registrar-em-api.sh",
-  "gerarPdfMock": "Com a API a correr: bash docs/simplix-dossie/gerar-pdf-mock-api.sh → PDF em docs/preview/; gera dossie-estrutura-generate-v2.request.json (cópia do sample) e mock-kit/dossie-simplix-api-request.last-run.json (último POST). Referência do corpo: docs/preview/mock-kit/dossie-simplix-api-request.mock.json",
+  "gerarPdfMock": "Com a API a correr: bash docs/simplix-dossie/gerar-pdf-mock-api.sh → PDF em docs/preview/; gera também dossie-estrutura-generate-v2.request.json (payload BD aninhado) e dossie-estrutura-generate-v2.post-docengine.json (POST /documents/generate). Mock: docs/samples/dossie-payload-simplix-nested.exemplo.json",
   "registarPsql": "bash docs/simplix-dossie/psql-seed-partner.sh (usa PG*; opcional DOSSIE_TEMPLATE_JSON=.../template-upsert.json)",
   "registarPsqlManual": "node docs/scripts/emit-dossie-template-sql.mjs --json docs/simplix-dossie/template-upsert.json --target partner | psql postgresql://postgres:postgres@localhost:5432/docengine -v ON_ERROR_STOP=1"
 }

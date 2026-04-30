@@ -2,10 +2,8 @@
   "meta": {
     "descricao": "Mock de payload estruturado para o dossiê Simplix (dados fictícios).",
     "versaoContrato": "1",
-    "uso": "Exemplo de dados aninhados para POST /documents/generate (ver também docs/preview/mock-kit/dossie-simplix-api-request.mock.json). Remover meta antes do POST. titulo + logoBase64 (ou objeto marca) preenchem {{DOSSIE_HEADER_TITULO}} e {{LOGO}} no PDF."
+    "uso": "Converter com docs/scripts/estrutura-dossie-to-flat-dados.mjs (buildTemplateDadosFromEstrutura + buildPdfsAnexosTermosPoliticaECcb). Juntar com chaves CCB/termos/logo de docs/templates/dossie-simplix-template-dados.sem-imagens.json para satisfazer os 72 requiredFields do template dossie-simplix. Gravar template: POST /templates com corpo em docs/preview/template-dossie-simplix-upsert.json (gerado por node docs/scripts/build-template-dossie-upsert-payload.mjs). Remover meta antes do POST de documentos."
   },
-  "titulo": "Dossiê probatório – Parceiro Demonstração",
-  "logoBase64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
   "cliente": {
     "ordem": 1,
     "nome": "João Pedro Almeida Santos",

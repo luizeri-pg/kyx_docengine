@@ -1,0 +1,44 @@
+{
+  "requisicaoId": "334440bd-4d4f-48ed-8af9-3b108183102f",
+  "config": {
+    "template": "dossie-simplix-v2",
+    "centroCusto": "DEMO",
+    "nomeArquivo": "dossie-simplix-v2-mock.pdf",
+    "pdfsAnexos": [
+      {
+        "ordem": 5,
+        "base64": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAyOSA+PgpzdHJlYW0KcSAxIDEgMSByZyAwIDAgNjEyIDc5MiByZSBmIFEKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMDggMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA1IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyODcKJSVFT0YK"
+      },
+      {
+        "ordem": 6,
+        "base64": "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAyOSA+PgpzdHJlYW0KcSAxIDEgMSByZyAwIDAgNjEyIDc5MiByZSBmIFEKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTIxIDAwMDAwIG4gCjAwMDAwMDAyMDggMDAwMDAgbiAKdHJhaWxlcgo8PCAvU2l6ZSA1IC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoyODcKJSVFT0YK"
+      }
+    ]
+  },
+  "dados": {
+    "LOGO_SIMPLIX_BASE64": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "IMG_CLIENTE_FOTO": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "IMG_SELFIE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "IMG_DOCUMENTO_FRENTE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "IMG_DOCUMENTO_VERSO": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "HASH_DOSSIE": "f0e1d2c3b4a59687766554433221100fedcba9876543210fedcba9876543210",
+    "CLIENTE_NOME": "João Pedro Almeida Santos",
+    "PROVA_VIDA_NOME": "João Pedro Almeida Santos",
+    "CLIENTE_CPF": "390.533.447-05",
+    "CLIENTE_NASCIMENTO": "22/07/1991",
+    "CAPTURA_DATA_HORA": "16/04/2026 09:15:33",
+    "CAPTURA_LATITUDE": "-22.906847",
+    "CAPTURA_LONGITUDE": "-43.172896",
+    "CAPTURA_IP": "177.12.34.56",
+    "CAPTURA_PORTA": "60412",
+    "CAPTURA_MODELO_OS": "iOS 17.2; iPhone 14",
+    "DOCENGINE_USE_CHROME_PAGE_FOOTER": "true",
+    "EVENTOS_HTML": "<tr><td>Saudação</td><td>16/04/2026<br>09:10:00 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>\n<tr><td>Opt-In Termos E Políticas</td><td>16/04/2026<br>09:10:22 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>\n<tr><td>Captura De Documento</td><td>16/04/2026<br>09:12:01 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>\n<tr><td>Documento Aprovado</td><td>16/04/2026<br>09:12:45 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>\n<tr><td>Captura Liveness</td><td>16/04/2026<br>09:14:10 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>\n<tr><td>Processamento Dossiê</td><td>16/04/2026<br>09:16:00 (-03:00)</td><td>IP: 177.12.34.56:60412\nLatitude: -22.906847\nLongitude: -43.172896\nCelular e Navegador: Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1</td></tr>",
+    "PROTOCOLO_ATENDIMENTO": "8da24334-17a7-4950-94af-507260c8e97c",
+    "ATENDIMENTO_INICIO": "16/04/2026 09:10:00",
+    "INTERACOES_HTML": "<tr><td>16/04/2026<br>09:10:00</td><td></td><td>Bem-vindo, João! Inicie a jornada de formalização da sua antecipação de saque aniversário do FGTS. Para iniciarmos, clique em <b>Começar</b>.</td></tr>\n<tr><td>16/04/2026<br>09:10:18</td><td>Cliente</td><td>COMEÇAR</td></tr>\n<tr><td>16/04/2026<br>09:12:40</td><td>Sistema</td><td>Documento aprovado automaticamente.</td></tr>",
+    "DOSSIE_BLOCO_INTERCALADO_HTML": "",
+    "TERMOS_POLITICA_HTML": "",
+    "DOCUMENTO_TIPO": "CNH"
+  }
+}

@@ -10,16 +10,16 @@
       "chavesHtmlFluxo": "EVENTOS_HTML e INTERACOES_HTML: linhas <tr>; não repetir texto legal de Termos/CCB no chat (só referência aos anexos PDF). CCB/termos integrais: config.pdfsAnexos (ordem) ou config.pdfsAnexosBase64."
     },
     "ficheirosImagensEBase64": {
-      "ondeVao": "No objeto dados, como strings nos mesmos nomes do template (ex.: LOGO). Não é um anexo multipart: é texto no JSON.",
+      "ondeVao": "No objeto dados, como strings nos mesmos nomes do template (ex.: LOGO_SIMPLIX_BASE64). Não é um anexo multipart: é texto no JSON.",
       "chavesDeImagemNoTemplate": [
-        "LOGO",
+        "LOGO_SIMPLIX_BASE64",
         "IMG_CLIENTE_FOTO",
         "IMG_SELFIE",
         "IMG_DOCUMENTO_FRENTE",
         "IMG_DOCUMENTO_VERSO"
       ],
       "formatosAceitesPeloDocEngine": "Data URI completa (data:image/png;base64,...) ou só o Base64 da imagem (sem prefixo) — o API normaliza para data URI nas chaves de imagem acima. URL https também funciona se o Chrome conseguir ir buscar na impressão.",
-      "exemploNode": "import fs from 'fs'; const b64 = fs.readFileSync('logo.png').toString('base64'); dados.LOGO = 'data:image/png;base64,' + b64;",
+      "exemploNode": "import fs from 'fs'; const b64 = fs.readFileSync('logo.png').toString('base64'); dados.LOGO_SIMPLIX_BASE64 = 'data:image/png;base64,' + b64;",
       "pdfsAdicionaisNoFinalDoDossie": "Ficheiros PDF completos (ex.: proposta) não entram em dados: use config.pdfsAnexos [{ ordem, base64 }] (preferido) ou config.pdfsAnexosBase64 — anexados após o HTML→PDF, ordenados por ordem."
     },
     "conteudoIntercaladoNoMeioDoDossie": {
@@ -95,8 +95,7 @@
     ]
   },
   "dados": {
-    "DOSSIE_HEADER_TITULO": "Dossiê probatório – Contratação Digital Simplix",
-    "LOGO": "",
+    "LOGO_SIMPLIX_BASE64": "",
     "IMG_CLIENTE_FOTO": "",
     "IMG_SELFIE": "",
     "IMG_DOCUMENTO_FRENTE": "",
