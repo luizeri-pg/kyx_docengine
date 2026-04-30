@@ -55,6 +55,9 @@ docs/preview/mock-kit/dossie-simplix-api-request.full.json
 docs/preview/mock-kit/dossie-simplix-api-request.last-run.json
 docs/preview/mock-kit/dossie-simplix-api-request.last-run-sync.request.json
 
+# Saída local do script batch-test-templates-hash-pagination.mjs (PDFs de teste)
+docs/preview/template-hash-tests/
+
 
 # Python virtual environment
 .venv-pdf/
