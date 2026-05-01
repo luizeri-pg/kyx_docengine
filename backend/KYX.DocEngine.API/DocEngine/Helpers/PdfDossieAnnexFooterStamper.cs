@@ -169,7 +169,6 @@ public static class PdfDossieAnnexFooterStamper
         var font = new XFont(stampFamily, 7, XFontStyleEx.Regular);
         var fontPageNum = new XFont(stampFamily, 9, XFontStyleEx.Regular);
         var brushMuted = new XSolidBrush(XColor.FromArgb(68, 68, 68));
-        var brushBackdrop = new XSolidBrush(XColor.FromArgb(235, 255, 255, 255));
         var fmtLeft = new XStringFormat
         {
             Alignment = XStringAlignment.Near,
@@ -189,11 +188,18 @@ public static class PdfDossieAnnexFooterStamper
             var w = page.Width.Point;
             var h = page.Height.Point;
             const double padX = 18;
-            const double padBottom = 10;
-            const double bandH = 22;
+            const double padBottom = 6;
+            const double bandH = 28;
+            const double maskExtra = 14;
             var yTop = h - padBottom - bandH;
-            var backdrop = new XRect(padX - 4, yTop - 2, w - 2 * (padX - 4), bandH + 4);
-            gfx.DrawRectangle(brushBackdrop, backdrop);
+            /**
+             * Anexos vêm de outros geradores (Chromium, scanner, etc) e podem trazer rodapé próprio
+             * a poucos pontos do bottom. Pintamos uma faixa branca 100% opaca de borda a borda
+             * que tapa o rodapé original antes de carimbar hash + numeração global.
+             */
+            var maskTop = Math.Max(0, yTop - maskExtra);
+            var maskHeight = h - maskTop;
+            gfx.DrawRectangle(XBrushes.White, new XRect(0, maskTop, w, maskHeight));
             var rectHash = new XRect(padX, yTop, w * 0.74 - padX, bandH);
             var rectNum = new XRect(w * 0.74, yTop, w * 0.26 - padX, bandH);
             var pageLabel = $"{i + 1} / {totalPages}";
