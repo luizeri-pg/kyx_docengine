@@ -60,12 +60,21 @@ internal static class AnnexFooterPdfFonts
         var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         var candidates = new[]
         {
+            // Alpine Linux — ttf-freefont (já instalado no Dockerfile.publish)
+            "/usr/share/fonts/freefont/FreeSans.ttf",
+            "/usr/share/fonts/freefont/FreeSerif.ttf",
+            "/usr/share/fonts/freefont/FreeMono.ttf",
+            // Alpine — ttf-dejavu (se instalado)
+            "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            // Debian/Ubuntu
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
             "/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf",
+            // macOS
             "/Library/Fonts/Arial.ttf",
             Path.Combine(profile, "Library/Fonts/Arial.ttf"),
             "/System/Library/Fonts/Supplemental/Arial.ttf",
+            // Windows
             string.IsNullOrEmpty(windir) ? null : Path.Combine(windir, "Fonts", "arial.ttf"),
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf")
         };
