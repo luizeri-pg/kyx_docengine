@@ -58,14 +58,20 @@ internal static class AnnexFooterPdfFonts
     {
         var windir = Environment.GetEnvironmentVariable("WINDIR");
         var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var candidates = new[]
+
+        // 1. Caminhos exactos por prioridade (TTF e OTF — PdfSharp lê ambos)
+        var exactPaths = new[]
         {
-            // Alpine Linux — ttf-freefont (já instalado no Dockerfile.publish)
+            // Alpine Linux — ttf-freefont (Dockerfile.publish): pode ser .ttf ou .otf
             "/usr/share/fonts/freefont/FreeSans.ttf",
+            "/usr/share/fonts/freefont/FreeSans.otf",
             "/usr/share/fonts/freefont/FreeSerif.ttf",
+            "/usr/share/fonts/freefont/FreeSerif.otf",
             "/usr/share/fonts/freefont/FreeMono.ttf",
-            // Alpine — ttf-dejavu (se instalado)
+            "/usr/share/fonts/freefont/FreeMono.otf",
+            // Alpine Linux — font-dejavu
             "/usr/share/fonts/dejavu/DejaVuSans.ttf",
+            "/usr/share/fonts/TTF/DejaVuSans.ttf",
             // Debian/Ubuntu
             "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
             "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
@@ -79,28 +85,60 @@ internal static class AnnexFooterPdfFonts
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "arial.ttf")
         };
 
-        foreach (var p in candidates)
+        foreach (var p in exactPaths)
         {
-            if (string.IsNullOrEmpty(p) || !File.Exists(p))
-            {
-                continue;
-            }
+            var b = TryReadFont(p);
+            if (b != null) return b;
+        }
 
+        // 2. Fallback: varrer directórios comuns procurando qualquer TTF/OTF
+        var searchDirs = new[]
+        {
+            "/usr/share/fonts/freefont",
+            "/usr/share/fonts/dejavu",
+            "/usr/share/fonts/TTF",
+            "/usr/share/fonts/truetype",
+            "/usr/share/fonts",
+            Path.Combine(profile, "Library/Fonts"),
+            "/Library/Fonts",
+            "/System/Library/Fonts"
+        };
+
+        foreach (var dir in searchDirs)
+        {
+            if (!Directory.Exists(dir)) continue;
             try
             {
-                var b = File.ReadAllBytes(p);
-                if (b.Length > 1000)
+                foreach (var ext in new[] { "*.ttf", "*.otf" })
                 {
-                    return b;
+                    foreach (var f in Directory.GetFiles(dir, ext, SearchOption.AllDirectories))
+                    {
+                        var b = TryReadFont(f);
+                        if (b != null) return b;
+                    }
                 }
             }
             catch
             {
-                // tentar próximo caminho
+                // directório sem permissão — tentar o próximo
             }
         }
 
         return null;
+    }
+
+    private static byte[]? TryReadFont(string? path)
+    {
+        if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+        try
+        {
+            var b = File.ReadAllBytes(path);
+            return b.Length > 1000 ? b : null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private sealed class SingleTtfFontResolver : IFontResolver
